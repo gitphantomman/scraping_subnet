@@ -19,6 +19,7 @@
 
 import typing
 import bittensor as bt
+from datetime import datetime
 
 # TODO(developer): Rewrite with your protocol definition.
 
@@ -38,6 +39,22 @@ import bittensor as bt
 #   dendrite = bt.dendrite()
 #   dummy_output = dendrite.query( Dummy( dummy_input = 1 ) )
 #   assert dummy_output == 2
+# class GetDataInput( bt.Synapse):
+#     maxN: int
+
+# class RedditPost():
+#     id: str
+#     title: str
+#     content: str
+#     url: str
+#     created_utc: datetime    
+    
+
+# class ReturnDataOutput(bt.Synapse):
+#     returnN: int
+#     redditPostList: list[RedditPost]
+    
+
 
 class Dummy( bt.Synapse ):
     """
@@ -54,9 +71,9 @@ class Dummy( bt.Synapse ):
     dummy_input: int
 
     # Optional request output, filled by recieving axon.
-    dummy_output: typing.Optional[int] = None
+    dummy_output: typing.Optional[list[dict]] = None
 
-    def deserialize(self) -> int:
+    def deserialize(self) -> list[dict]:
         """
         Deserialize the dummy output. This method retrieves the response from
         the miner in the form of dummy_output, deserializes it and returns it
