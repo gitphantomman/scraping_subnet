@@ -20,7 +20,11 @@ on Bittensor's main-network (real TAO, to be released), Bittensor's test-network
 
 # Introduction
 The Bittensor blockchain hosts multiple self-contained incentive mechanisms 'subnets'. Subnets are playing fields through which miners (those producing value) and validators (those producing consensus) determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e. generating digital commodities, such as intelligence, or data. Each consists of a wire protocol through which miners and validators interact and their method of interacting with Bittensor's chain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus) which is designed to drive these actors into agreement about who is creating value.
+
+
 ![Alt text](docs/Screenshot_18.png)
+
+
 Data scraping plays a pivotal role in many AI and machine learning models, often serving as the partial layer for various subnets, including s1. We aim to extract data from platforms like Reddit, Twitter, and other social media sites, consolidating this information into shared storage solutions like Weights & Biases (wandb). In the future, we plan to utilize the storage subnet of Bittensor to enhance our data storage capabilities. 
 
 - `template/protocol.py`: The file where the wire-protocol used by miners and validators is defined.
@@ -32,7 +36,7 @@ Data scraping plays a pivotal role in many AI and machine learning models, often
 ---
 
 # Running the project
-Before running the template you will need to attain a subnetwork on either Bittensor's main network, test network, or your own staging network. To create subnetworks on each of these subnets follow the instructions in files below:
+Before running the project you will need to attain a subnetwork on either Bittensor's main network, test network, or your own staging network. To create subnetworks on each of these subnets follow the instructions in files below:
 - `docs/running_on_staging.md`
 - `docs/running_on_testnet.md`
 - `docs/running_on_mainnet.md`

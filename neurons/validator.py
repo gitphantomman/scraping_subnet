@@ -113,15 +113,17 @@ def main( config ):
     # Step 7: The Main Validation Loop
     bt.logging.info("Starting validator loop.")
     step = 0
+    data_per_step = 20
     while True:
         try:
             # TODO(developer): Define how the validator selects a miner to query, how often, etc.
             # Broadcast a query to all miners on the network.
+            
             responses = dendrite.query(
                 # Send the query to all axons in the network.
                 metagraph.axons,
                 # Construct a dummy query.
-                template.protocol.Dummy( dummy_input = step ), # Construct a dummy query.
+                template.protocol.Dummy( dummy_input = data_per_step ), # Construct a dummy query.
                 # All responses have the deserialize function called on them before returning.
                 deserialize = True, 
             )

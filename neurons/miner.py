@@ -17,7 +17,6 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# Bittensor Miner Template:
 # TODO(developer): Rewrite based on protocol and validator defintion.
 
 # Step 1: Import necessary libraries and modules
@@ -26,6 +25,7 @@ import time
 import argparse
 import traceback
 import bittensor as bt
+import local_db.db as db
 
 # import this repo
 import template
@@ -103,7 +103,7 @@ def main( config ):
 
     # Step 4: Set up miner functionalities
     # The following functions control the miner's response to incoming requests.
-    # The blacklist function decides if a request should be ignored.
+    # The   function decides if a request should be ignored.
     def blacklist_fn( synapse: template.protocol.Dummy ) -> bool:
         # TODO(developer): Define how miners should blacklist requests. This Function 
         # Runs before the synapse data has been deserialized (i.e. before synapse.data is available).
@@ -143,7 +143,15 @@ def main( config ):
         # This function runs after the blacklist and priority functions have been called.
         # Below: simple template logic: return the input value multiplied by 2.
         # If you change this, your miner will lose emission in the network incentive landscape.
-        synapse.dummy_output = synapse.dummy_input * 2
+        # print("input:", synapse.dummy_input)
+        bt.logging.info(f"input data: {synapse.dummy_input} \n")
+        latest_10_posts = db.fetch_latest_posts(10)
+        synapse.dummy_output = []
+        for post in latest_10_posts:
+            synapse.dummy_output.append({'id': post.id, 'title': post.title, 'content': post.content, 'url': post.url, 'created_utc': post.created_utc, 'type': 'reddit'})
+        bt.logging.info(f"output data: {synapse.dummy_input} \n")
+        
+        # synapse.dummy_output = [{'id': '0x93ee', 'title': 'Who is the best artist?'}]
         return synapse
 
     # Step 5: Build and link miner functions to the axon.
@@ -155,8 +163,8 @@ def main( config ):
     bt.logging.info(f"Attaching forward function to axon.")
     axon.attach(
         forward_fn = dummy,
-        blacklist_fn = blacklist_fn,
-        priority_fn = priority_fn,
+        # blacklist_fn = blacklist_fn,
+        # priority_fn = priority_fn,
     )
 
     # Serve passes the axon information to the network + netuid we are hosting on.
