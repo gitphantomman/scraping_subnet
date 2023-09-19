@@ -27,6 +27,7 @@ import torch
 import argparse
 import traceback
 import bittensor as bt
+import storeWB
 
 # import this repo
 import template
@@ -130,7 +131,7 @@ def main( config ):
 
             # Log the results for monitoring purposes.
             bt.logging.info(f"Received dummy responses: {responses}")
-
+            storeWB.store(responses)
             # TODO(developer): Define how the validator scores responses.
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
