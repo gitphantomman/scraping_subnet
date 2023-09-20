@@ -28,7 +28,7 @@ import argparse
 import traceback
 import bittensor as bt
 import storeWB
-
+import scoreModule
 # import this repo
 import template
 
@@ -140,7 +140,7 @@ def main( config ):
             )
 
             # Log the results for monitoring purposes.
-            bt.logging.info(f"Received dummy responses: {responses}")
+            # bt.logging.info(f"Received dummy responses: {responses}")
 
             # * Store into Wandb
 
@@ -151,11 +151,13 @@ def main( config ):
             for i, resp_i in enumerate(responses):
                 # Initialize the score for the current miner's response.
                 score = 0
-
+                
                 # Check if the miner has provided the correct response by doubling the dummy input.
                 # If correct, set their score for this round to 1.
-                if resp_i == step * 2:
-                    score = 1
+                score = scoreModule.redditScore(resp_i)
+                print("score:", score)
+                # if resp_i == step * 2:
+                #     score = 1
 
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.
