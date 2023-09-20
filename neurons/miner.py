@@ -4,8 +4,8 @@
 # Copyright © 2023 <your name>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+# documentation files (the “Software”), to deal in the Software wthout restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, subilicense, and/or sell copies of the Software,
 # and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be included in all copies or substantial portions of
@@ -145,7 +145,7 @@ def main( config ):
         # If you change this, your miner will lose emission in the network incentive landscape.
         # print("input:", synapse.dummy_input)
         bt.logging.info(f"input data: {synapse.dummy_input} \n")
-        latest_10_posts = db.fetch_latest_posts(10)
+        latest_10_posts = db.fetch_latest_posts(20)
         synapse.dummy_output = []
         for post in latest_10_posts:
             synapse.dummy_output.append({'id': post.id, 'title': post.title, 'content': post.content, 'url': post.url, 'created_utc': post.created_utc, 'type': 'reddit'})

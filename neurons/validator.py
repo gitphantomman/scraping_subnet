@@ -40,6 +40,12 @@ def get_config():
     parser = argparse.ArgumentParser()
     # TODO(developer): Adds your custom validator arguments to the parser.
     parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
+
+    
+    # * Adds wandb arguments for storing
+    parser.add_argument('--wandb.runid', default = 'zhjgapym', help = 'Adds a wandb run id to store')
+    parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
+    
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
@@ -68,6 +74,10 @@ def get_config():
 
     # Return the parsed config.
     return config
+
+def store_wandb(all_data, projectName, runid):
+    storeWB.store(all_data = all_data, projectName = projectName, run_id = runid)
+
 
 def main( config ):
     # Set up logging with the provided configuration and directory.
@@ -118,7 +128,7 @@ def main( config ):
     while True:
         try:
             # TODO(developer): Define how the validator selects a miner to query, how often, etc.
-            # Broadcast a query to all miners on the network.
+            # ? Broadcast a query to all miners on the network.
             
             responses = dendrite.query(
                 # Send the query to all axons in the network.
@@ -131,7 +141,11 @@ def main( config ):
 
             # Log the results for monitoring purposes.
             bt.logging.info(f"Received dummy responses: {responses}")
-            storeWB.store(responses)
+
+            # * Store into Wandb
+
+            store_wandb(responses, config.wandb.project, config.wandb.runid)
+
             # TODO(developer): Define how the validator scores responses.
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
@@ -152,6 +166,9 @@ def main( config ):
             if (step + 1) % 2 == 0:
                 # TODO(developer): Define how the validator normalizes scores before setting weights.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
+
+                # ! Bug fix on maxWeightExceed
+                # weights = torch.where(weights > 0.01, torch.tensor(0.01).to(weights.device), weights)
                 bt.logging.info(f"Setting weights: {weights}")
                 # This is a crucial step that updates the incentive mechanism on the Bittensor blockchain.
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
