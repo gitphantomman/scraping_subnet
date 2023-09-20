@@ -74,6 +74,8 @@ python -m neurons/validator.py
     --subtensor.chain_endpoint <your chain url> # Must be attained by following the instructions in the docs/running_on_*.md files
     --wallet.name <your validator wallet>  # Must be created using the bittensor-cli
     --wallet.hotkey <your validator hotkey> # Must be created using the bittensor-cli
+    --wandb.project <your wandb project name> # Default: zhjgapym
+    --wandb.runid <your wandb run id> # Default: scraping_subnet-neurons
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
 ```
 

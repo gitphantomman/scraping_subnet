@@ -1,5 +1,5 @@
 git+https://github.com/opentensor/bittensor.git@revolution
 torch
-praw==7.7.1
-python-dotenv==1.0.0
-SQLAlchemy==2.0.20
+praw
+python-dotenv
+SQLAlchemy
