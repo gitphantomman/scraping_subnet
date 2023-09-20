@@ -33,6 +33,6 @@ def continuous_scrape(interval=300):
             time.sleep(interval)
         except Exception as e:
             print(f"Error occurred: {e}")
-            time.sleep(60) # Wait for a minute before trying again
+            time.sleep(20) # Wait for a minute before trying again
 if __name__ == "__main__":
     continuous_scrape()

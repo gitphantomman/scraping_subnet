@@ -8,7 +8,7 @@ def store(all_data, projectName, run_id):
     for data in all_data:
         if(data is not None):
             for item in data:
-                print(item)
+                # print(item)
                 wandb.log({
                     "id": item['id'],
                     "title": item['title'],
@@ -22,11 +22,10 @@ def store(all_data, projectName, run_id):
 
 
 # * Testing
-def printLog():
+def returnLog():
     api = wandb.Api()
     run = api.run("aureliojafer/scraping_subnet-neurons/zhjgapym")
     historyData = run.history()
-    print(historyData)
+    return historyData
 
-printLog()
 
