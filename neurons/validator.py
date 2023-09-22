@@ -30,7 +30,7 @@ import bittensor as bt
 import storeWB
 import scoreModule
 # import this repo
-import template
+import scraping
 
 
 # Step 2: Set up the configuration parser
@@ -43,7 +43,7 @@ def get_config():
 
     
     # * Adds wandb arguments for storing
-    parser.add_argument('--wandb.runid', default = 'zhjgapym', help = 'Adds a wandb run id to store')
+    parser.add_argument('--wandb.runid', default = 'w8937gls', help = 'Adds a wandb run id to store')
     parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
     
     # Adds override arguments for network and netuid.
@@ -134,7 +134,7 @@ def main( config ):
                 # Send the query to all axons in the network.
                 metagraph.axons,
                 # Construct a dummy query.
-                template.protocol.Dummy( dummy_input = data_per_step ), # Construct a dummy query.
+                scraping.protocol.Scrap( scrap_input = data_per_step ), # Construct a dummy query.
                 # All responses have the deserialize function called on them before returning.
                 deserialize = True, 
             )
@@ -155,7 +155,7 @@ def main( config ):
                 # Check if the miner has provided the correct response by doubling the dummy input.
                 # If correct, set their score for this round to 1.
                 score = scoreModule.redditScore(resp_i)
-                print("score:", score)
+                print(f"score[{i}]:", score)
                 # if resp_i == step * 2:
                 #     score = 1
 
