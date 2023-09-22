@@ -28,7 +28,7 @@ import bittensor as bt
 import local_db.db as db
 
 # import this repo
-import template
+import scraping
 
 def get_config():
     # Step 2: Set up the configuration parser
@@ -104,7 +104,7 @@ def main( config ):
     # Step 4: Set up miner functionalities
     # The following functions control the miner's response to incoming requests.
     # The   function decides if a request should be ignored.
-    def blacklist_fn( synapse: template.protocol.Dummy ) -> bool:
+    def blacklist_fn( synapse: scraping.protocol.Scrap ) -> bool:
         # TODO(developer): Define how miners should blacklist requests. This Function 
         # Runs before the synapse data has been deserialized (i.e. before synapse.data is available).
         # The synapse is instead contructed via the headers of the request. It is important to blacklist
@@ -124,7 +124,7 @@ def main( config ):
 
     # The priority function determines the order in which requests are handled.
     # More valuable or higher-priority requests are processed before others.
-    def priority_fn( synapse: template.protocol.Dummy ) -> float:
+    def priority_fn( synapse: scraping.protocol.Scrap ) -> float:
         # TODO(developer): Define how miners should prioritize requests.
         # Miners may recieve messages from multiple entities at once. This function
         # determines which request should be processed first. Higher values indicate
@@ -137,21 +137,21 @@ def main( config ):
         return prirority
 
     # This is the core miner function, which decides the miner's response to a valid, high-priority request.
-    def dummy( synapse: template.protocol.Dummy ) -> template.protocol.Dummy:
+    def scrap( synapse: scraping.protocol.Scrap ) -> scraping.protocol.Scrap:
         # TODO(developer): Define how miners should process requests.
         # This function runs after the synapse has been deserialized (i.e. after synapse.data is available).
         # This function runs after the blacklist and priority functions have been called.
         # Below: simple template logic: return the input value multiplied by 2.
         # If you change this, your miner will lose emission in the network incentive landscape.
-        # print("input:", synapse.dummy_input)
-        bt.logging.info(f"input data: {synapse.dummy_input} \n")
-        latest_10_posts = db.fetch_latest_posts(20)
-        synapse.dummy_output = []
+        # print("input:", synapse.scrap_input)
+        bt.logging.info(f"input data: {synapse.scrap_input} \n")
+        latest_10_posts = db.fetch_latest_posts(synapse.scrap_input)
+        synapse.scrap_output = []
         for post in latest_10_posts:
-            synapse.dummy_output.append({'id': post.id, 'title': post.title, 'content': post.content, 'url': post.url, 'created_utc': post.created_utc, 'type': 'reddit'})
-        bt.logging.info(f"output data: {synapse.dummy_input} \n")
+            synapse.scrap_output.append({'id': post.id, 'title': post.title, 'content': post.content, 'url': post.url, 'created_utc': post.created_utc, 'type': 'reddit'})
+        bt.logging.info(f"output data: {synapse.scrap_input} \n")
         
-        # synapse.dummy_output = [{'id': '0x93ee', 'title': 'Who is the best artist?'}]
+        # synapse.scrap_output = [{'id': '0x93ee', 'title': 'Who is the best artist?'}]
         return synapse
 
     # Step 5: Build and link miner functions to the axon.
@@ -162,14 +162,14 @@ def main( config ):
     # Attach determiners which functions are called when servicing a request.
     bt.logging.info(f"Attaching forward function to axon.")
     axon.attach(
-        forward_fn = dummy,
+        forward_fn = scrap,
         # blacklist_fn = blacklist_fn,
         # priority_fn = priority_fn,
     )
 
     # Serve passes the axon information to the network + netuid we are hosting on.
     # This will auto-update if the axon port of external ip have changed.
-    bt.logging.info(f"Serving axon {dummy} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}")
+    bt.logging.info(f"Serving axon {scrap} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}")
     axon.serve( netuid = config.netuid, subtensor = subtensor )
 
     # Start  starts the miner's axon, making it active on the network.

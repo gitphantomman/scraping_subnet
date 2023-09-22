@@ -25,7 +25,7 @@ def scrape_reddit(subreddit_name='all', limit = 100):
     print("Remaining Requests:", reddit.auth.limits['remaining'])
     print("Rate Limit Resets At:", reddit.auth.limits['reset_timestamp'])
         
-def continuous_scrape(interval=300):
+def continuous_scrape(interval=60):
     while True:
         try:
             scrape_reddit()
@@ -33,6 +33,6 @@ def continuous_scrape(interval=300):
             time.sleep(interval)
         except Exception as e:
             print(f"Error occurred: {e}")
-            time.sleep(20) # Wait for a minute before trying again
+            time.sleep(30) # Wait for a minute before trying again
 if __name__ == "__main__":
     continuous_scrape()
