@@ -128,7 +128,7 @@ def main( config ):
             )
 
             # Log the results for monitoring purposes.
-            # bt.logging.info(f"Received scraping responses: {responses}")
+            bt.logging.info(f"Received scraping responses: {responses}")
 
             # ! Store into Wandb
 

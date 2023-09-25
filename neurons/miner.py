@@ -86,7 +86,7 @@ def main( config ):
     bt.logging.info(f"Metagraph: {metagraph}")
 
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
-        bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again. ")
+        bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli wallet register and try again. ")
         exit()
     else:
         # Each miner gets a unique identity (UID) in the network for differentiation.
@@ -131,11 +131,11 @@ def main( config ):
         # This function runs after the blacklist and priority functions have been called.
         # Below: simple template logic: return the input value multiplied by 2.
         # If you change this, your miner will lose emission in the network incentive landscape.
-        bt.logging.info(f"input data: {synapse.scrap_input} \n")
+        bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
         latest_posts = db.fetch_latest_posts(synapse.scrap_input)
         print("latest_posts:", latest_posts)
         synapse.scrap_output = latest_posts
-        bt.logging.info(f"output data: {len(latest_posts)} \n")
+        bt.logging.info(f"number of response data: {len(latest_posts)} \n")
         return synapse
 
     # Build and link miner functions to the axon.
