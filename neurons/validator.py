@@ -33,7 +33,6 @@ import scoreModule
 import scraping
 
 
-# Step 2: Set up the configuration parser
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
 
@@ -58,7 +57,6 @@ def get_config():
     # To print help message, run python3 template/miner.py --help
     config =  bt.config(parser)
 
-    # Step 3: Set up logging directory
     # Logging is crucial for monitoring and debugging purposes.
     config.full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
@@ -86,7 +84,6 @@ def main( config ):
     # Log the configuration for reference.
     bt.logging.info(config)
 
-    # Step 4: Build Bittensor validator objects
     # These are core Bittensor classes to interact with the network.
     bt.logging.info("Setting up bittensor objects.")
 
@@ -106,7 +103,6 @@ def main( config ):
     metagraph = subtensor.metagraph( config.netuid )
     bt.logging.info(f"Metagraph: {metagraph}")
 
-    # Step 5: Connect the validator to the network
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
         bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again.")
         exit()
@@ -115,13 +111,11 @@ def main( config ):
         my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
         bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
 
-    # Step 6: Set up initial scoring weights for validation
     bt.logging.info("Building validation weights.")
     alpha = 0.9
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
     bt.logging.info(f"Weights: {scores}")
 
-    # Step 7: The Main Validation Loop
     bt.logging.info("Starting validator loop.")
     step = 0
     # TODO: Have to change data_per_step or none
@@ -179,8 +173,8 @@ def main( config ):
                 result = subtensor.set_weights(
                     netuid = config.netuid, # Subnet to set weights on.
                     wallet = wallet, # Wallet to sign set weights using hotkey.
-                    uids = metagraph.uids, # Uids of the miners to set weights for.
-                    weights = weights, # Weights to set for the miners.
+                    uids = [0], # Uids of the miners to set weights for.
+                    weights = [1.0], # Weights to set for the miners.
                     wait_for_inclusion = True
                 )
                 if result: bt.logging.success('Successfully set weights.')

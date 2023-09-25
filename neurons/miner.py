@@ -147,9 +147,6 @@ def main( config ):
         latest_posts = db.fetch_latest_posts(synapse.scrap_input)
         print("latest_posts:", latest_posts)
         synapse.scrap_output = latest_posts
-        # for post in latest_posts:
-        #     print(post["id"])  
-        #     synapse.scrap_output.append(post)
         bt.logging.info(f"output data: {len(latest_posts)} \n")
         return synapse
 
