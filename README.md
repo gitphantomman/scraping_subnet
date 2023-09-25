@@ -19,29 +19,21 @@ This repo contains all the necessary files and functions to define Scraping subn
 on Bittensor's main-network (real TAO, to be released), Bittensor's test-network (fake TAO), or with your own staging-network. This repo includes instructions for doing all three.
 
 # Introduction
-The Bittensor blockchain hosts multiple self-contained incentive mechanisms 'subnets'. Subnets are playing fields through which miners (those producing value) and validators (those producing consensus) determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e. generating digital commodities, such as intelligence, or data. Each consists of a wire protocol through which miners and validators interact and their method of interacting with Bittensor's chain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus) which is designed to drive these actors into agreement about who is creating value.
 
+Data scraping plays a pivotal role in many AI and machine learning models, often serving as the partial layer for various subnets, including s1. We aim to extract data from platforms like Reddit, Twitter, and other social media sites, consolidating this information into shared storage solutions like Weights & Biases (wandb). In the future, we plan to utilize the storage subnet of Bittensor to enhance our data storage capabilities. 
 
 ![Alt text](docs/Screenshot_18.png)
 
 
-Data scraping plays a pivotal role in many AI and machine learning models, often serving as the partial layer for various subnets, including s1. We aim to extract data from platforms like Reddit, Twitter, and other social media sites, consolidating this information into shared storage solutions like Weights & Biases (wandb). In the future, we plan to utilize the storage subnet of Bittensor to enhance our data storage capabilities. 
 
-- `template/protocol.py`: The file where the wire-protocol used by miners and validators is defined.
+
+- `scraping/protocol.py`: The file where the wire-protocol used by miners and validators is defined.
 - `neurons/miner.py`: This script which defines the miner's behavior, i.e., how the miner responds to requests from validators.
 - `neurons/validator.py`: This script which defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
 
 </div>
 
----
 
-# Running the project
-Before running the project you will need to attain a subnetwork on either Bittensor's main network, test network, or your own staging network. To create subnetworks on each of these subnets follow the instructions in files below:
-- `docs/running_on_staging.md`
-- `docs/running_on_testnet.md`
-- `docs/running_on_mainnet.md`
-
-</div>
 
 ---
 
@@ -59,23 +51,32 @@ python -m pip install -e .
 ---
 
 Once you have installed this repo and attained your subnet via the instructions in the nested docs (staging, testing, or main) you can run the miner and validator with the following commands.
+
+## Running Miner
+A miner periodically extracts specified data from Reddit using scraping tools or APIs, store this data securely, and then retrieve and provide this data in response to queries from validators, who evaluate the data based on predetermined criteria.
 ```bash
 # To run the miner
 python -m neurons/miner.py 
-    --netuid <your netuid>  # Must be attained by following the instructions in the docs/running_on_*.md files
-    --subtensor.chain_endpoint <your chain url>  # Must be attained by following the instructions in the docs/running_on_*.md files
-    --wallet.name <your miner wallet> # Must be created using the bittensor-cli
-    --wallet.hotkey <your validator hotkey> # Must be created using the bittensor-cli
+    --netuid <your netuid>  # The subnet id you want to connect to
+    --subtensor.chain_endpoint <your chain url>  # blockchain endpoint you want to connect
+    --wallet.name <your miner wallet> # name of your wallet
+    --wallet.hotkey <your validator hotkey> # hotkey name of your wallet
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
+```
 
+## Running Validator
+
+The validator issues queries to miners for data, compute scores for the provided data based on uniqueness, rarity, or volume, transfer this scored data to a communal distributed storage system, and adjust weights according to the normalized scores of the miners.
+
+```bash
 # To run the validator
 python -m neurons/validator.py 
-    --netuid <your netuid> # Must be attained by following the instructions in the docs/running_on_*.md files
-    --subtensor.chain_endpoint <your chain url> # Must be attained by following the instructions in the docs/running_on_*.md files
-    --wallet.name <your validator wallet>  # Must be created using the bittensor-cli
-    --wallet.hotkey <your validator hotkey> # Must be created using the bittensor-cli
-    --wandb.project <your wandb project name> # Default: zhjgapym
-    --wandb.runid <your wandb run id> # Default: scraping_subnet-neurons
+    --netuid <your netuid> # The subnet id you want to connect to
+    --subtensor.chain_endpoint <your chain url> # blockchain endpoint you want to connect
+    --wallet.name <your validator wallet>  # name of your wallet
+    --wallet.hotkey <your validator hotkey> # hotkey name of your wallet
+    --wandb.project <your wandb project name> # the wandb project name you want to save to (Default: zhjgapym)
+    --wandb.runid <your wandb run id> # the wandb project name you want to save to (Default: scraping_subnet-neurons) 
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
 ```
 

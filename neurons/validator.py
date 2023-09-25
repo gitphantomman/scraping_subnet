@@ -37,9 +37,6 @@ import scraping
 def get_config():
 
     parser = argparse.ArgumentParser()
-    # TODO(developer): Adds your custom validator arguments to the parser.
-    parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
-
     
     # * Adds wandb arguments for storing
     parser.add_argument('--wandb.runid', default = 'w8937gls', help = 'Adds a wandb run id to store')
