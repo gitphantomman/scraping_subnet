@@ -40,7 +40,6 @@ def returnLog():
     run = api.run("aureliojafer/scraping_subnet-neurons/w8937gls")
     historyData = run.history()
     print(len(historyData))
-    # historyData.to_csv("output.csv", index = False)
     keys = historyData[0].keys()
     with open('output.csv', 'w', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=keys)

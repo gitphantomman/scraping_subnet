@@ -72,7 +72,7 @@ class Scrap( bt.Synapse ):
 
     # Optional request output, filled by recieving axon.
     scrap_output: typing.Optional[list[dict]] = None
-
+    # scrap_input_hash: str = None
     def deserialize(self) -> list[dict]:
         """
         Deserialize the dummy output. This method retrieves the response from
@@ -89,4 +89,4 @@ class Scrap( bt.Synapse ):
         >>> dummy_instance.deserialize()
         5
         """
-        return self.scrap_input
+        return self.scrap_output

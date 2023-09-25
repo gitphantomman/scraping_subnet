@@ -124,14 +124,15 @@ def main( config ):
     # Step 7: The Main Validation Loop
     bt.logging.info("Starting validator loop.")
     step = 0
-    data_per_step = 20
+    # TODO: Have to change data_per_step or none
+    data_per_step = 50
     while True:
         try:
             # TODO(developer): Define how the validator selects a miner to query, how often, etc.
             # ? Broadcast a query to all miners on the network.
             
             responses = dendrite.query(
-                # Send the query to all axons in the network.
+                # TODO: Send the query to all axons in the network.
                 metagraph.axons,
                 # Construct a dummy query.
                 scraping.protocol.Scrap( scrap_input = data_per_step ), # Construct a dummy query.
@@ -142,7 +143,7 @@ def main( config ):
             # Log the results for monitoring purposes.
             # bt.logging.info(f"Received dummy responses: {responses}")
 
-            # * Store into Wandb
+            # ! Store into Wandb
 
             store_wandb(responses, config.wandb.project, config.wandb.runid)
 
@@ -154,6 +155,7 @@ def main( config ):
                 
                 # Check if the miner has provided the correct response by doubling the dummy input.
                 # If correct, set their score for this round to 1.
+                # ? Calulate each miner's score
                 score = scoreModule.redditScore(resp_i)
                 print(f"score[{i}]:", score)
                 # if resp_i == step * 2:

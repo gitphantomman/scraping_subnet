@@ -143,15 +143,14 @@ def main( config ):
         # This function runs after the blacklist and priority functions have been called.
         # Below: simple template logic: return the input value multiplied by 2.
         # If you change this, your miner will lose emission in the network incentive landscape.
-        # print("input:", synapse.scrap_input)
         bt.logging.info(f"input data: {synapse.scrap_input} \n")
-        latest_10_posts = db.fetch_latest_posts(synapse.scrap_input)
-        synapse.scrap_output = []
-        for post in latest_10_posts:
-            synapse.scrap_output.append({'id': post.id, 'title': post.title, 'content': post.content, 'url': post.url, 'created_utc': post.created_utc, 'type': 'reddit'})
-        bt.logging.info(f"output data: {synapse.scrap_input} \n")
-        
-        # synapse.scrap_output = [{'id': '0x93ee', 'title': 'Who is the best artist?'}]
+        latest_posts = db.fetch_latest_posts(synapse.scrap_input)
+        print("latest_posts:", latest_posts)
+        synapse.scrap_output = latest_posts
+        # for post in latest_posts:
+        #     print(post["id"])  
+        #     synapse.scrap_output.append(post)
+        bt.logging.info(f"output data: {len(latest_posts)} \n")
         return synapse
 
     # Step 5: Build and link miner functions to the axon.
@@ -161,6 +160,7 @@ def main( config ):
 
     # Attach determiners which functions are called when servicing a request.
     bt.logging.info(f"Attaching forward function to axon.")
+    # ! enable blacklist, priority
     axon.attach(
         forward_fn = scrap,
         # blacklist_fn = blacklist_fn,

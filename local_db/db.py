@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
@@ -17,6 +17,7 @@ class RedditPost(Base):
     url = Column(String)
     content = Column(Text)
     created_utc = Column(DateTime)
+    uploaded = Column(Boolean, default = False)
     
 
 engine = create_engine('sqlite:///reddit_data.db')
@@ -89,11 +90,17 @@ def fetch_latest_posts(n):
     """
     Session = sessionmaker(bind=engine)
     session = Session()
-
+    returnData = []
     try:
-        # Fetch the latest N posts.
+        # Fetch the latest N posts. (uploaded == false)
         posts = session.query(RedditPost).order_by(RedditPost.created_utc.desc()).limit(n).all()
-        return posts
+        # Update uploaded field to True for the fetched posts. .filter(RedditPost.uploaded != True)
+        for post in posts:
+            post.uploaded = True
+            returnData.append({"id" : post.id, "title": post.title, "content": post.content, "url": post.url, "created_utc": post.created_utc, "type": "reddit"})
+         # Commit the changes to the database.
+        session.commit()
+        return returnData
 
     except Exception as e:
         print(f"Error while fetching data: {e}")
