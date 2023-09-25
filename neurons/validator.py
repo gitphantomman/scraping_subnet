@@ -17,8 +17,6 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# Bittensor Validator Template:
-# TODO(developer): Rewrite based on protocol defintion.
 
 # Step 1: Import necessary libraries and modules
 import os
@@ -29,7 +27,6 @@ import traceback
 import bittensor as bt
 import storeWB
 import scoreModule
-# import this repo
 import scraping
 
 
@@ -51,7 +48,7 @@ def get_config():
     # Adds wallet specific arguments i.e. --wallet.name ..., --wallet.hotkey ./. or --wallet.path ...
     bt.wallet.add_args(parser)
     # Parse the config (will take command-line arguments if provided)
-    # To print help message, run python3 template/miner.py --help
+    # To print help message, run python3 neurons/validator.py --help
     config =  bt.config(parser)
 
     # Logging is crucial for monitoring and debugging purposes.
@@ -70,6 +67,7 @@ def get_config():
     # Return the parsed config.
     return config
 
+# Wandb store function
 def store_wandb(all_data, projectName, runid):
     storeWB.store(all_data = all_data, projectName = projectName, run_id = runid)
 
@@ -119,39 +117,31 @@ def main( config ):
     data_per_step = 50
     while True:
         try:
-            # TODO(developer): Define how the validator selects a miner to query, how often, etc.
             # ? Broadcast a query to all miners on the network.
             
             responses = dendrite.query(
-                # TODO: Send the query to all axons in the network.
                 metagraph.axons,
-                # Construct a dummy query.
-                scraping.protocol.Scrap( scrap_input = data_per_step ), # Construct a dummy query.
+                # Construct a scraping query.
+                scraping.protocol.Scrap( scrap_input = data_per_step ), # Construct a scraping query.
                 # All responses have the deserialize function called on them before returning.
                 deserialize = True, 
             )
 
             # Log the results for monitoring purposes.
-            # bt.logging.info(f"Received dummy responses: {responses}")
+            # bt.logging.info(f"Received scraping responses: {responses}")
 
             # ! Store into Wandb
 
             store_wandb(responses, config.wandb.project, config.wandb.runid)
-
-            # TODO(developer): Define how the validator scores responses.
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
                 # Initialize the score for the current miner's response.
                 score = 0
-                
-                # Check if the miner has provided the correct response by doubling the dummy input.
+                # Check if the miner has provided the correct response by doubling the scraping input.
                 # If correct, set their score for this round to 1.
                 # ? Calulate each miner's score
                 score = scoreModule.redditScore(resp_i)
-                print(f"score[{i}]:", score)
-                # if resp_i == step * 2:
-                #     score = 1
-
+                # print(f"score[{i}]:", score)
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.
                 # A higher weight means that the miner has been consistently responding correctly.
@@ -159,19 +149,15 @@ def main( config ):
 
             # Periodically update the weights on the Bittensor blockchain.
             if (step + 1) % 2 == 0:
-                # TODO(developer): Define how the validator normalizes scores before setting weights.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
-
                 # ! Bug fix on maxWeightExceed
-                # weights = torch.where(weights > 0.01, torch.tensor(0.01).to(weights.device), weights)
                 bt.logging.info(f"Setting weights: {weights}")
-                # This is a crucial step that updates the incentive mechanism on the Bittensor blockchain.
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
                 result = subtensor.set_weights(
                     netuid = config.netuid, # Subnet to set weights on.
                     wallet = wallet, # Wallet to sign set weights using hotkey.
-                    uids = [0], # Uids of the miners to set weights for.
-                    weights = [1.0], # Weights to set for the miners.
+                    uids = metagraph.uids, # Uids of the miners to set weights for.
+                    weights = weights, # Weights to set for the miners.
                     wait_for_inclusion = True
                 )
                 if result: bt.logging.success('Successfully set weights.')
