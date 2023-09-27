@@ -3,3 +3,4 @@ torch
 praw
 python-dotenv
 SQLAlchemy
+tweepy

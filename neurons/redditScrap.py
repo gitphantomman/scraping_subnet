@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import praw
 import time
-from local_db.db import store_data
+from local_db.reddit_db import store_data
 load_dotenv()
 
 
