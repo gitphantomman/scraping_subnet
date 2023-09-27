@@ -13,7 +13,7 @@ class TwitterPost(Base):
     """
     __tablename__ = 'twitter_posts'
     url_hash = Column(String, primary_key=True)
-    id = Column(String, primary_key=True)
+    id = Column(String)
     url = Column(String)
     text = Column(Text)
     created_at = Column(DateTime)

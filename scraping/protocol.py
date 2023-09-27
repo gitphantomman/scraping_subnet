@@ -90,3 +90,16 @@ class Scrap( bt.Synapse ):
         5
         """
         return self.scrap_output
+
+
+class TwitterScrap( bt.Synapse ):
+
+
+    # Required request input, filled by sending dendrite caller.
+    scrap_input: int
+
+    # Optional request output, filled by recieving axon.
+    scrap_output: typing.Optional[list[dict]] = None
+    # scrap_input_hash: str = None
+    def deserialize(self) -> list[dict]:
+        return self.scrap_output

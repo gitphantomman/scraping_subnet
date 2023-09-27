@@ -36,7 +36,9 @@ def get_config():
     parser = argparse.ArgumentParser()
     
     # * Adds wandb arguments for storing
-    parser.add_argument('--wandb.runid', default = 'w8937gls', help = 'Adds a wandb run id to store')
+    # parser.add_argument('--wandb.runid', default = 'w8937gls', help = 'Adds a wandb run id to store')
+    
+    parser.add_argument('--wandb.runid', default = 'g1ibv7db', help = 'Adds a wandb run id to store')
     parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
     
     # Adds override arguments for network and netuid.
@@ -70,7 +72,8 @@ def get_config():
 # Wandb store function
 def store_wandb(all_data, projectName, runid):
     storeWB.store(all_data = all_data, projectName = projectName, run_id = runid)
-
+def store_Twitter_wandb(all_data, projectName, runid):
+    storeWB.store_twitter(all_data = all_data, projectName = projectName, run_id = runid)
 
 def main( config ):
     # Set up logging with the provided configuration and directory.
@@ -122,17 +125,17 @@ def main( config ):
             responses = dendrite.query(
                 metagraph.axons,
                 # Construct a scraping query.
-                scraping.protocol.Scrap( scrap_input = data_per_step ), # Construct a scraping query.
+                scraping.protocol.TwitterScrap( scrap_input = data_per_step ), # Construct a scraping query.
                 # All responses have the deserialize function called on them before returning.
                 deserialize = True, 
             )
 
             # Log the results for monitoring purposes.
-            bt.logging.info(f"Received scraping responses: {responses}")
+            # bt.logging.info(f"Received scraping responses: {responses}")
 
             # ! Store into Wandb
 
-            store_wandb(responses, config.wandb.project, config.wandb.runid)
+            store_Twitter_wandb(responses, config.wandb.project, config.wandb.runid)
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
                 # Initialize the score for the current miner's response.
@@ -140,7 +143,7 @@ def main( config ):
                 # Check if the miner has provided the correct response by doubling the scraping input.
                 # If correct, set their score for this round to 1.
                 # ? Calulate each miner's score
-                score = scoreModule.redditScore(resp_i)
+                score = scoreModule.twitterScore(resp_i)
                 # print(f"score[{i}]:", score)
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.

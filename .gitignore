@@ -83,6 +83,10 @@ target/
 profile_default/
 ipython_config.py
 neurons/wandb/
+neurons/accounts.db
+neurons/twitter_data.db
+neurons/outputReddit.csv
+neurons/outputTwitter.csv
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is

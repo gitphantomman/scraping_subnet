@@ -22,7 +22,8 @@ import time
 import argparse
 import traceback
 import bittensor as bt
-import local_db.db as db
+import local_db.reddit_db as reddit_db
+import local_db.twitter_db as twitter_db
 import scraping
 
 def get_config():
@@ -126,14 +127,13 @@ def main( config ):
         return prirority
 
     # This is the core miner function, which decides the miner's response to a valid, high-priority request.
-    def scrap( synapse: scraping.protocol.Scrap ) -> scraping.protocol.Scrap:
+    def scrap( synapse: scraping.protocol.TwitterScrap ) -> scraping.protocol.TwitterScrap:
         # This function runs after the synapse has been deserialized (i.e. after synapse.data is available).
         # This function runs after the blacklist and priority functions have been called.
         # Below: simple template logic: return the input value multiplied by 2.
         # If you change this, your miner will lose emission in the network incentive landscape.
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
-        latest_posts = db.fetch_latest_posts(synapse.scrap_input)
-        print("latest_posts:", latest_posts)
+        latest_posts = twitter_db.fetch_latest_posts(synapse.scrap_input)
         synapse.scrap_output = latest_posts
         bt.logging.info(f"number of response data: {len(latest_posts)} \n")
         return synapse
