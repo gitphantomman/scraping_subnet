@@ -120,38 +120,44 @@ def main( config ):
     data_per_step = 50
     while True:
         try:
-            # ? Broadcast a query to all miners on the network.
             
-            responses = dendrite.query(
-                metagraph.axons,
-                # Construct a scraping query.
-                scraping.protocol.TwitterScrap( scrap_input = data_per_step ), # Construct a scraping query.
-                # All responses have the deserialize function called on them before returning.
-                deserialize = True, 
-            )
-
-            # Log the results for monitoring purposes.
-            # bt.logging.info(f"Received scraping responses: {responses}")
-
-            # ! Store into Wandb
-
-            store_Twitter_wandb(responses, config.wandb.project, config.wandb.runid)
-            # Adjust the scores based on responses from miners.
-            for i, resp_i in enumerate(responses):
-                # Initialize the score for the current miner's response.
-                score = 0
-                # Check if the miner has provided the correct response by doubling the scraping input.
-                # If correct, set their score for this round to 1.
-                # ? Calulate each miner's score
-                score = scoreModule.twitterScore(resp_i)
-                # print(f"score[{i}]:", score)
-                # Update the global score of the miner.
-                # This score contributes to the miner's weight in the network.
-                # A higher weight means that the miner has been consistently responding correctly.
-                scores[i] = alpha * scores[i] + (1 - alpha) * score
+            
 
             # Periodically update the weights on the Bittensor blockchain.
             if (step + 1) % 2 == 0:
+
+
+                # ? Broadcast a query to all miners on the network.
+                responses = dendrite.query(
+                    metagraph.axons,
+                    # Construct a scraping query.
+                    scraping.protocol.TwitterScrap( scrap_input = data_per_step ), # Construct a scraping query.
+                    # All responses have the deserialize function called on them before returning.
+                    deserialize = True, 
+                )
+
+                # Log the results for monitoring purposes.
+                # bt.logging.info(f"Received scraping responses: {responses}")
+
+                # ! Store into Wandb
+
+                store_Twitter_wandb(responses, config.wandb.project, config.wandb.runid)
+                for i, resp_i in enumerate(responses):
+                # Initialize the score for the current miner's response.
+                    score = 0
+                    # Check if the miner has provided the correct response by doubling the scraping input.
+                    # If correct, set their score for this round to 1.
+                    # ? Calulate each miner's score
+                    score = scoreModule.twitterScore(resp_i)
+                    # print(f"score[{i}]:", score)
+                    # Update the global score of the miner.
+                    # This score contributes to the miner's weight in the network.
+                    # A higher weight means that the miner has been consistently responding correctly.
+                    scores[i] = alpha * scores[i] + (1 - alpha) * score
+
+
+
+                # Adjust the scores based on responses from miners.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 # ! Bug fix on maxWeightExceed
                 bt.logging.info(f"Setting weights: {weights}")
@@ -165,6 +171,28 @@ def main( config ):
                 )
                 if result: bt.logging.success('Successfully set weights.')
                 else: bt.logging.error('Failed to set weights.') 
+            else:
+                # ? Broadcast a query to all miners on the network.
+                responses = dendrite.query(
+                    metagraph.axons,
+                    # Construct a scraping query.
+                    scraping.protocol.CheckMiner( check_url_hash = "37adb6fd5c5644a6c35be1914573d9cf7bb661fb2fb23f0de34faaf4be1d6a3c" ), # Construct a scraping query.
+                    # All responses have the deserialize function called on them before returning.
+                    deserialize = True, 
+                )
+                responses_urls = []
+                for response in responses:
+                    if(response == None): 
+                        responses_urls.append('NONE')
+                    else:
+                        responses_urls.append(response['url'])
+                new_scores = scoreModule.checkScore(responses_urls)
+                for i in range(0, len(responses)):
+                    scores[i] = alpha * scores[i] + (1 - alpha) * ( new_scores[i])
+                # Log the results for monitoring purposes.
+                bt.logging.info(f"Received checking responses: {responses}")
+                bt.logging.info(f"new score by checking: {scores}")
+
 
             # End the current step and prepare for the next iteration.
             step += 1

@@ -25,6 +25,7 @@ import bittensor as bt
 import local_db.reddit_db as reddit_db
 import local_db.twitter_db as twitter_db
 import scraping
+import bittensor as bt
 
 def get_config():
     # This function initializes the necessary command-line arguments.
@@ -127,11 +128,19 @@ def main( config ):
         return prirority
 
     # This is the core miner function, which decides the miner's response to a valid, high-priority request.
-    def scrap( synapse: scraping.protocol.TwitterScrap ) -> scraping.protocol.TwitterScrap:
+    async def check( synapse: scraping.protocol.CheckMiner) -> scraping.protocol.CheckMiner:
+        bt.logging.info(f"url: {synapse.check_url_hash} \n" )
+        synapse.check_output = twitter_db.find_by_url_hash(synapse.check_url_hash)
+        bt.logging.info(f"check_output: {synapse.check_output}")
+        return synapse
+    
+    def scrap( synapse: scraping.protocol.TwitterScrap) -> scraping.protocol.TwitterScrap: 
         # This function runs after the synapse has been deserialized (i.e. after synapse.data is available).
         # This function runs after the blacklist and priority functions have been called.
         # Below: simple template logic: return the input value multiplied by 2.
         # If you change this, your miner will lose emission in the network incentive landscape.
+        # if type(synapse) is type(scraping.protocol.TwitterScrap):
+
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
         latest_posts = twitter_db.fetch_latest_posts(synapse.scrap_input)
         synapse.scrap_output = latest_posts
@@ -146,7 +155,7 @@ def main( config ):
     # Attach determiners which functions are called when servicing a request.
     bt.logging.info(f"Attaching forward function to axon.")
     # ! enable blacklist, priority
-    axon.attach(
+    axon.attach(check).attach(
         forward_fn = scrap,
         # blacklist_fn = blacklist_fn,
         # priority_fn = priority_fn,

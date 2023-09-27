@@ -37,7 +37,6 @@ def store_twitter(all_data, projectName, run_id):
     
     history_ids = []
     for index, item in historyData.iterrows():
-        print(item)
         history_ids.append(item['id'])
 
     
@@ -70,9 +69,6 @@ def printRedditCSV():
     api = wandb.Api()
     run = api.run("aureliojafer/scraping_subnet-neurons/w8937gls")
     historyData = run.history()
-    # print(historyData)
-    print(historyData.keys())
-    # keys = historyData[0].keys()
 
     with open('outputReddit.csv', 'w', newline='') as file:
         writer = csv.DictWriter(file)

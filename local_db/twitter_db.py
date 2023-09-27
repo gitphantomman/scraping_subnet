@@ -87,3 +87,27 @@ def fetch_latest_posts(n = 50):
 
     finally:
         session.close()
+
+def find_by_url_hash(url_hash):
+    """Fetches the Twitter post from the database based on the URL.
+
+    Args:
+        url (str): The URL of the post to fetch.
+
+    Returns:
+        TwitterPost: The TwitterPost object if found, else None.
+    """
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        # Query the database for a post with the given url_hash
+        post = session.query(TwitterPost).filter_by(url_hash=url_hash).first()
+        
+        return {"id" : post.id, "url": post.url, "url_hash": post.url_hash, "text": post.text, "created_at": post.created_at}
+    
+    except Exception as e:
+        print(f"Error while fetching data by URL: {e}")
+        return None
+    
+    finally:
+        session.close()

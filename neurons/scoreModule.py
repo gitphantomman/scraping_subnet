@@ -64,3 +64,29 @@ def twitterScore( response ):
         return 1 - 0.15 * timeScore - 0.5 * unique_score
     else:
         return 0
+    
+def checkScore(responses = ['apple', 'beer', 'apple', 'beer', 'apple', 'heart', 'apple']):
+    result = {}
+    score = {}
+    total_count = len(responses)
+    for idx, response in enumerate(responses):
+        if response in result:
+            result[response].append(idx)
+        else:
+            result[response] = [idx]
+    for key, value in result.items():
+        if(key == "NONE"):
+            concensus = 0
+        concensus = len(value) / total_count
+        if concensus >= 0.5:
+            for id in value:
+                score[f'{id}'] = 1
+        else:
+            for id in value:
+                score[f'{id}'] = concensus
+    scoreArray = []
+    for i in range(0, len(responses)):
+        scoreArray.append(score[f'{i}'])
+    # print(scoreArray)
+    return scoreArray
+checkScore()

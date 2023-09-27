@@ -52,8 +52,47 @@ python -m pip install -e .
 
 Once you have installed this repo and attained your subnet via the instructions in the nested docs (staging, testing, or main) you can run the miner and validator with the following commands.
 
+## Running Scraping Script (Twitter)
+A miner scraps data from Twitter at regular intervals of every 15 seconds and subsequently store this information into their local database. You need Twitter developer account. If you didn't have one, you can bring it from [Twitter Developer Portal](https://developer.twitter.com/en/portal/products).
+Then the scraped data is saved to `neurons/twitter_data.db` sothat miner can response to validator's query using this database.
+```bash
+# To run the scraping script
+python neurons/twitterScrap.py 
+```
+## Define Protocol
+You can customize protocol between validator and miner by changing `scraping/protocol.py`.
+There're already two protocol classes which are inhereited from bittensor.Synapse class.
+
+```python
+class TwitterScrap( bt.Synapse ):
+
+    # Required request input, filled by sending dendrite caller.
+    scrap_input: int
+
+    # Optional request output, filled by recieving axon.
+    scrap_output: typing.Optional[list[dict]] = None
+    
+    # scrap_input_hash: str = None
+    def deserialize(self) -> list[dict]:
+        return self.scrap_output
+
+
+class CheckMiner( bt.Synapse ):
+
+    # Required request input, send url_hash for check
+    check_url_hash: str
+
+    # Return response with tweet searched by url_hash
+    check_output: typing.Optional[dict] = None
+
+    def deserialize(self) -> dict:
+        return self.check_output
+```
+
+
 ## Running Miner
-A miner periodically extracts specified data from Reddit using scraping tools or APIs, store this data securely, and then retrieve and provide this data in response to queries from validators, who evaluate the data based on predetermined criteria.
+A miner periodically extracts specified data from Twitter using scraping tools or APIs, store this data securely, and then retrieve and provide this data in response to queries from validators, who evaluate the data based on predetermined criteria.
+Then also miners response to validator by finding post from url_hash for evaluating their's performance.
 ```bash
 # To run the miner
 python -m neurons/miner.py 
