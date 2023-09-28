@@ -1,23 +1,28 @@
-# The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# Copyright © 2023 Chris Wilson
+"""
+This is the main module for the miner. It includes the necessary imports, the configuration setup, and the main function that runs the miner.
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software wthout restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, subilicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The MIT License (MIT)
+Copyright © 2023 Yuma Rao
+Copyright © 2023 Chris Wilson
 
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the “Software”), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+the Software.
 
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+"""
 
+# Importing necessary libraries and modules
 import os
+import sys
 import time
 import argparse
 import traceback
@@ -25,11 +30,14 @@ import bittensor as bt
 import local_db.reddit_db as reddit_db
 import local_db.twitter_db as twitter_db
 import scraping
-import bittensor as bt
+
+# TODO: Check if all the necessary libraries are installed and up-to-date
 
 def get_config():
-    # This function initializes the necessary command-line arguments.
-    # Using command-line arguments allows users to customize various miner settings.
+    """
+    This function initializes the necessary command-line arguments.
+    Using command-line arguments allows users to customize various miner settings.
+    """
     parser = argparse.ArgumentParser()
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
@@ -60,10 +68,14 @@ def get_config():
     if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=True)
     return config
 
+# TODO: Add error handling for when the directory for logging cannot be created
 
 # Main takes the config and starts the miner.
 def main( config ):
-
+    """
+    This function takes the configuration and starts the miner.
+    It sets up the necessary Bittensor objects, attaches the necessary functions to the axon, and starts the main loop.
+    """
     # Activating Bittensor's logging with the set configurations.
     bt.logging(config=config, logging_dir=config.full_path)
     bt.logging.info(f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
@@ -96,12 +108,14 @@ def main( config ):
         bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
     # Set up miner functionalities
-    # The   function decides if a request should be ignored.
-    def blacklist_fn( synapse: scraping.protocol.Scrap ) -> bool:
-        # Runs before the synapse data has been deserialized (i.e. before synapse.data is available).
-        # The synapse is instead contructed via the headers of the request. It is important to blacklist
-        # requests before they are deserialized to avoid wasting resources on requests that will be ignored.
-        # Below: Check that the hotkey is a registered entity in the metagraph.
+    # The blacklist function decides if a request should be ignored.
+    def blacklist_fn( synapse: scraping.protocol.TwitterScrap ) -> bool:
+        """
+        This function runs before the synapse data has been deserialized (i.e. before synapse.data is available).
+        The synapse is instead contructed via the headers of the request. It is important to blacklist
+        requests before they are deserialized to avoid wasting resources on requests that will be ignored.
+        Below: Check that the hotkey is a registered entity in the metagraph.
+        """
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
             # Ignore requests from unrecognized entities.
             bt.logging.trace(f'Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}')
@@ -115,19 +129,23 @@ def main( config ):
 
     # The priority function determines the order in which requests are handled.
     # More valuable or higher-priority requests are processed before others.
-    def priority_fn( synapse: scraping.protocol.Scrap ) -> float:
-        # Miners may recieve messages from multiple entities at once. This function
-        # determines which request should be processed first. Higher values indicate
-        # that the request should be processed first. Lower values indicate that the
-        # request should be processed later.
-        # Below: simple logic, prioritize requests from entities with more stake.
+    def priority_fn( synapse: scraping.protocol.TwitterScrap ) -> float:
+        """
+        Miners may recieve messages from multiple entities at once. This function
+        determines which request should be processed first. Higher values indicate
+        that the request should be processed first. Lower values indicate that the
+        request should be processed later.
+        Below: simple logic, prioritize requests from entities with more stake.
+        """
         caller_uid = metagraph.hotkeys.index( synapse.dendrite.hotkey ) # Get the caller index.
         prirority = float( metagraph.S[ caller_uid ] ) # Return the stake as the priority.
         bt.logging.trace(f'Prioritizing {synapse.dendrite.hotkey} with value: ', prirority)
         return prirority
 
     async def check( synapse: scraping.protocol.CheckMiner) -> scraping.protocol.CheckMiner:
-        # This function runs after the CheckMiner synapse has been deserialized.
+        """
+        This function runs after the CheckMiner synapse has been deserialized.
+        """
         bt.logging.info(f"url: {synapse.check_url_hash} \n" )
         synapse.check_output = twitter_db.find_by_url_hash(synapse.check_url_hash)
         bt.logging.info(f"check_output: {synapse.check_output}")
@@ -135,8 +153,10 @@ def main( config ):
         return synapse
     
     def scrap( synapse: scraping.protocol.TwitterScrap) -> scraping.protocol.TwitterScrap: 
-        # This function runs after the TwitterScrap synapse has been deserialized (i.e. after synapse.data is available).
-        # This function runs after the blacklist and priority functions have been called.
+        """
+        This function runs after the TwitterScrap synapse has been deserialized (i.e. after synapse.data is available).
+        This function runs after the blacklist and priority functions have been called.
+        """
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
         # Fetch latest posts from miner's local database.
         synapse.scrap_output = twitter_db.fetch_latest_posts(synapse.scrap_input)
@@ -199,7 +219,12 @@ def main( config ):
             bt.logging.error(traceback.format_exc())
             continue
 
+# TODO: Add error handling for when the miner cannot start or stop
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
-    main( get_config() )
+    try:
+        main( get_config() )
+    except Exception as e:
+        bt.logging.error(f"Failed to start the miner due to: {str(e)}")
+        sys.exit(1)

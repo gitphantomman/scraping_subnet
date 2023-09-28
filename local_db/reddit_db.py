@@ -3,13 +3,21 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
 
+# Create a base class for declarative models
 Base = declarative_base()
 
+# Define the RedditPost model
 class RedditPost(Base):
-    """_SQL Entity to store scraped reddit posts_
+    """
+    SQL Entity to store scraped reddit posts
 
-    Args:
-    
+    Attributes:
+        id (str): The id of the post
+        title (str): The title of the post
+        url (str): The url of the post
+        content (str): The content of the post
+        created_utc (DateTime): The creation time of the post
+        uploaded (bool): Whether the post has been uploaded or not
     """
     __tablename__ = 'reddit_posts'
     id = Column(String, primary_key=True)
@@ -19,28 +27,35 @@ class RedditPost(Base):
     created_utc = Column(DateTime)
     uploaded = Column(Boolean, default = False)
     
-
+# TODO: Add error handling for database connection
+# Create a new engine instance
 engine = create_engine('sqlite:///reddit_data.db')
 
+# Create all tables in the engine
 Base.metadata.create_all(engine)
 
+# TODO: Check if these functions exist before exporting
+# Export the RedditPost model and the data manipulation functions
 __all__ = ["RedditPost", "store_data", "fetch_latest_posts"]
 
 def store_data(submission):
-    """Stores Reddit posts to the database.
+    """
+    Stores Reddit posts to the database.
 
     Args:
-        submission (lsit[RedditPost]): The list of posts to store.
+        submission (list[RedditPost]): The list of posts to store.
 
     Returns:
-
+        None
     """
+    # Create a new session
     Session = sessionmaker(bind = engine)
     session = Session()
+    # Convert the creation time to a datetime object
     dt_object = datetime.fromtimestamp(submission.created_utc)    
     try:
+        # Create a new post object and add it to the session
         post = RedditPost(id = submission.id, title = submission.title, url = submission.url, content = submission.selftext, created_utc = dt_object)
-        # Add and commit
         session.add(post)
         session.commit()
     
@@ -50,7 +65,8 @@ def store_data(submission):
         session.close()
         
 def fetch_data(post_id=None):
-    """Fetches Reddit posts from the database.
+    """
+    Fetches Reddit posts from the database.
 
     Args:
         post_id (str, optional): The ID of a specific post to fetch. If None, fetches all posts. Defaults to None.
@@ -58,6 +74,7 @@ def fetch_data(post_id=None):
     Returns:
         list[RedditPost]: List of RedditPost objects.
     """
+    # Create a new session
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -80,7 +97,8 @@ def fetch_data(post_id=None):
         session.close()
 
 def fetch_latest_posts(n):
-    """Fetches the latest N Reddit posts from the database based on their creation date.
+    """
+    Fetches the latest N Reddit posts from the database based on their creation date.
 
     Args:
         n (int): Number of latest posts to fetch.
@@ -88,6 +106,7 @@ def fetch_latest_posts(n):
     Returns:
         list[RedditPost]: List of N latest RedditPost objects.
     """
+    # Create a new session
     Session = sessionmaker(bind=engine)
     session = Session()
     returnData = []

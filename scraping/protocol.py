@@ -1,63 +1,80 @@
-# The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+"""
+The MIT License (MIT)
+Copyright © 2023 Yuma Rao
+Copyright © 2023 Chris Wilson
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the “Software”), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+the Software.
 
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+"""
 
 import typing
 import bittensor as bt
-from datetime import datetime
 
-from bittensor.synapse import Synapse
-
-    
-
-
-class Scrap( bt.Synapse ):
-
+class RedditScrap(bt.Synapse):
+    """
+    RedditScrap class inherits from bt.Synapse.
+    It is used to scrape data from Reddit.
+    """
     # Required request input, filled by sending dendrite caller.
     scrap_input: int
 
-    # Optional request output, filled by recieving axon.
+    # Optional request output, filled by receiving axon.
+    # TODO: Add error handling for when scrap_output is None
     scrap_output: typing.Optional[list[dict]] = None
-    # scrap_input_hash: str = None
+
     def deserialize(self) -> list[dict]:
+        """
+        Deserialize the scrap_output into a list of dictionaries.
+        """
+        # TODO: Add error handling for when scrap_output is None
         return self.scrap_output
 
-
-class TwitterScrap( bt.Synapse ):
-
+class TwitterScrap(bt.Synapse):
+    """
+    TwitterScrap class inherits from bt.Synapse.
+    It is used to scrape data from Twitter.
+    """
     # Required request input, filled by sending dendrite caller.
     scrap_input: int
 
-    # Optional request output, filled by recieving axon.
+    # Optional request output, filled by receiving axon.
+    # TODO: Add error handling for when scrap_output is None
     scrap_output: typing.Optional[list[dict]] = None
-    
-    # scrap_input_hash: str = None
+
     def deserialize(self) -> list[dict]:
+        """
+        Deserialize the scrap_output into a list of dictionaries.
+        """
+        # TODO: Add error handling for when scrap_output is None
         return self.scrap_output
 
-
-class CheckMiner( bt.Synapse ):
-
+class CheckMiner(bt.Synapse):
+    """
+    CheckMiner class inherits from bt.Synapse.
+    It is used to check the miner's status.
+    """
     # Required request input, send url_hash for check
     check_url_hash: str
 
     # Return response with tweet searched by url_hash
+    # TODO: Add error handling for when check_output is None
     check_output: typing.Optional[dict] = None
 
     def deserialize(self) -> dict:
+        """
+        Deserialize the check_output into a dictionary.
+        """
+        # TODO: Add error handling for when check_output is None
         return self.check_output
+

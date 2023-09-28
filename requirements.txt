@@ -4,3 +4,4 @@ praw
 python-dotenv
 SQLAlchemy
 tweepy
+pandas

@@ -1,8 +1,7 @@
-# The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# Copyright © 2023 Chris Wilson
+# This is the MIT License (MIT)
+# The copyright is held by Yuma Rao and Chris Wilson, dated 2023
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+# This license grants permission, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
 # and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -10,14 +9,14 @@
 # The above copyright notice and this permission notice shall be included in all copies or substantial portions of
 # the Software.
 
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
+# The software is provided as is, without any warranty of any kind, express or implied, including but not limited to
+# the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall
+# the authors or copyright holders be liable for any claim, damages or other liability, whether in an action
+# of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other
+# dealings in the software.
 
 
-# Import necessary libraries and modules
+# Importing necessary libraries and modules
 import os
 import time
 import torch
@@ -31,11 +30,13 @@ import scraping
 
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
-
+    """
+    This function sets up and parses command-line arguments.
+    """
     parser = argparse.ArgumentParser()
     
-    # * Adds wandb arguments for storing
-    # parser.add_argument('--wandb.runid', default = 'w8937gls', help = 'Adds a wandb run id to store')
+    # TODO: Validate the wandb run id and project name
+    # Adds wandb arguments for storing
     parser.add_argument('--wandb.runid', default = 'g1ibv7db', help = 'Adds a wandb run id to store')
     parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
     
@@ -62,6 +63,7 @@ def get_config():
         )
     )
     # Ensure the logging directory exists.
+    # TODO: Handle error if directory creation fails
     if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=True)
 
     # Return the parsed config.
@@ -69,13 +71,22 @@ def get_config():
 
 # Wandb: append data to reddit dataset
 def store_reddit_wandb(all_data, projectName, runid):
+    """
+    This function stores all data from reddit to wandb.
+    """
     storeWB.store_reddit(all_data = all_data, projectName = projectName, run_id = runid)
 
-# Wandb: append data to reddit dataset
+# Wandb: append data to twitter dataset
 def store_Twitter_wandb(all_data, projectName, runid):
+    """
+    This function stores all data from twitter to wandb.
+    """
     storeWB.store_twitter(all_data = all_data, projectName = projectName, run_id = runid)
 
 def main( config ):
+    """
+    This is the main function that sets up logging, initializes bittensor objects, and starts the validator loop.
+    """
     # Set up logging with the provided configuration and directory.
     bt.logging(config=config, logging_dir=config.full_path)
     bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
@@ -216,3 +227,4 @@ if __name__ == "__main__":
     config = get_config()
     # Run the main function.
     main( config )
+
