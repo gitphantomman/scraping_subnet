@@ -2,7 +2,6 @@
 This is the main module for the miner. It includes the necessary imports, the configuration setup, and the main function that runs the miner.
 
 The MIT License (MIT)
-Copyright © 2023 Yuma Rao
 Copyright © 2023 Chris Wilson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
