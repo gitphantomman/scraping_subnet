@@ -1,6 +1,5 @@
 """
 The MIT License (MIT)
-Copyright © 2023 Yuma Rao
 Copyright © 2023 Chris Wilson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
