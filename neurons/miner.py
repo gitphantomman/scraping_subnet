@@ -1,42 +1,44 @@
-# The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+"""
+This is the main module for the miner. It includes the necessary imports, the configuration setup, and the main function that runs the miner.
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software wthout restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, subilicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The MIT License (MIT)
+Copyright © 2023 Yuma Rao
+Copyright © 2023 Chris Wilson
 
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the “Software”), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+the Software.
 
-# TODO(developer): Rewrite based on protocol and validator defintion.
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+"""
 
-# Step 1: Import necessary libraries and modules
+# Importing necessary libraries and modules
 import os
+import sys
 import time
 import argparse
 import traceback
 import bittensor as bt
-import local_db.db as db
-
-# import this repo
+import local_db.reddit_db as reddit_db
+import local_db.twitter_db as twitter_db
 import scraping
 
+# TODO: Check if all the necessary libraries are installed and up-to-date
+
 def get_config():
-    # Step 2: Set up the configuration parser
-    # This function initializes the necessary command-line arguments.
-    # Using command-line arguments allows users to customize various miner settings.
+    """
+    This function initializes the necessary command-line arguments.
+    Using command-line arguments allows users to customize various miner settings.
+    """
     parser = argparse.ArgumentParser()
-    # TODO(developer): Adds your custom miner arguments to the parser.
-    parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
@@ -48,10 +50,10 @@ def get_config():
     # Adds axon specific arguments i.e. --axon.port ...
     bt.axon.add_args(parser)
     # Activating the parser to read any command-line inputs.
-    # To print help message, run python3 template/miner.py --help
+    # To print help message, run python3 neurons/miner.py --help
     config = bt.config(parser)
 
-    # Step 3: Set up logging directory
+    # Set up logging directory
     # Logging captures events for diagnosis or understanding miner's behavior.
     config.full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
@@ -66,10 +68,14 @@ def get_config():
     if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=True)
     return config
 
+# TODO: Add error handling for when the directory for logging cannot be created
 
 # Main takes the config and starts the miner.
 def main( config ):
-
+    """
+    This function takes the configuration and starts the miner.
+    It sets up the necessary Bittensor objects, attaches the necessary functions to the axon, and starts the main loop.
+    """
     # Activating Bittensor's logging with the set configurations.
     bt.logging(config=config, logging_dir=config.full_path)
     bt.logging.info(f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
@@ -77,7 +83,7 @@ def main( config ):
     # This logs the active configuration to the specified logging directory for review.
     bt.logging.info(config)
 
-    # Step 4: Initialize Bittensor miner objects
+    # Initialize Bittensor miner objects
     # These classes are vital to interact and function within the Bittensor network.
     bt.logging.info("Setting up bittensor objects.")
 
@@ -94,27 +100,26 @@ def main( config ):
     bt.logging.info(f"Metagraph: {metagraph}")
 
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
-        bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again. ")
+        bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli wallet register and try again. ")
         exit()
     else:
         # Each miner gets a unique identity (UID) in the network for differentiation.
         my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
         bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
-    # Step 4: Set up miner functionalities
-    # The following functions control the miner's response to incoming requests.
-    # The   function decides if a request should be ignored.
-    def blacklist_fn( synapse: scraping.protocol.Scrap ) -> bool:
-        # TODO(developer): Define how miners should blacklist requests. This Function 
-        # Runs before the synapse data has been deserialized (i.e. before synapse.data is available).
-        # The synapse is instead contructed via the headers of the request. It is important to blacklist
-        # requests before they are deserialized to avoid wasting resources on requests that will be ignored.
-        # Below: Check that the hotkey is a registered entity in the metagraph.
+    # Set up miner functionalities
+    # The blacklist function decides if a request should be ignored.
+    def blacklist_fn( synapse: scraping.protocol.TwitterScrap ) -> bool:
+        """
+        This function runs before the synapse data has been deserialized (i.e. before synapse.data is available).
+        The synapse is instead contructed via the headers of the request. It is important to blacklist
+        requests before they are deserialized to avoid wasting resources on requests that will be ignored.
+        Below: Check that the hotkey is a registered entity in the metagraph.
+        """
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
             # Ignore requests from unrecognized entities.
             bt.logging.trace(f'Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}')
             return True
-        # TODO(developer): In practice it would be wise to blacklist requests from entities that 
         # are not validators, or do not have enough stake. This can be checked via metagraph.S
         # and metagraph.validator_permit. You can always attain the uid of the sender via a
         # metagraph.hotkeys.index( synapse.dendrite.hotkey ) call.
@@ -124,41 +129,51 @@ def main( config ):
 
     # The priority function determines the order in which requests are handled.
     # More valuable or higher-priority requests are processed before others.
-    def priority_fn( synapse: scraping.protocol.Scrap ) -> float:
-        # TODO(developer): Define how miners should prioritize requests.
-        # Miners may recieve messages from multiple entities at once. This function
-        # determines which request should be processed first. Higher values indicate
-        # that the request should be processed first. Lower values indicate that the
-        # request should be processed later.
-        # Below: simple logic, prioritize requests from entities with more stake.
+    def priority_fn( synapse: scraping.protocol.TwitterScrap ) -> float:
+        """
+        Miners may recieve messages from multiple entities at once. This function
+        determines which request should be processed first. Higher values indicate
+        that the request should be processed first. Lower values indicate that the
+        request should be processed later.
+        Below: simple logic, prioritize requests from entities with more stake.
+        """
         caller_uid = metagraph.hotkeys.index( synapse.dendrite.hotkey ) # Get the caller index.
         prirority = float( metagraph.S[ caller_uid ] ) # Return the stake as the priority.
         bt.logging.trace(f'Prioritizing {synapse.dendrite.hotkey} with value: ', prirority)
         return prirority
 
-    # This is the core miner function, which decides the miner's response to a valid, high-priority request.
-    def scrap( synapse: scraping.protocol.Scrap ) -> scraping.protocol.Scrap:
-        # TODO(developer): Define how miners should process requests.
-        # This function runs after the synapse has been deserialized (i.e. after synapse.data is available).
-        # This function runs after the blacklist and priority functions have been called.
-        # Below: simple template logic: return the input value multiplied by 2.
-        # If you change this, your miner will lose emission in the network incentive landscape.
-        bt.logging.info(f"input data: {synapse.scrap_input} \n")
-        latest_posts = db.fetch_latest_posts(synapse.scrap_input)
-        print("latest_posts:", latest_posts)
-        synapse.scrap_output = latest_posts
-        bt.logging.info(f"output data: {len(latest_posts)} \n")
+    async def check( synapse: scraping.protocol.CheckMiner) -> scraping.protocol.CheckMiner:
+        """
+        This function runs after the CheckMiner synapse has been deserialized.
+        """
+        bt.logging.info(f"url: {synapse.check_url_hash} \n" )
+        synapse.check_output = twitter_db.find_by_url_hash(synapse.check_url_hash)
+        bt.logging.info(f"check_output: {synapse.check_output}")
+
+        return synapse
+    
+    def scrap( synapse: scraping.protocol.TwitterScrap) -> scraping.protocol.TwitterScrap: 
+        """
+        This function runs after the TwitterScrap synapse has been deserialized (i.e. after synapse.data is available).
+        This function runs after the blacklist and priority functions have been called.
+        """
+        bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
+        # Fetch latest posts from miner's local database.
+        synapse.scrap_output = twitter_db.fetch_latest_posts(synapse.scrap_input)
+        bt.logging.info(f"number of response data: {len(synapse.scrap_output)} \n")
+
         return synapse
 
-    # Step 5: Build and link miner functions to the axon.
+    # Build and link miner functions to the axon.
     # The axon handles request processing, allowing validators to send this process requests.
+    
     axon = bt.axon( wallet = wallet )
     bt.logging.info(f"Axon {axon}")
 
     # Attach determiners which functions are called when servicing a request.
     bt.logging.info(f"Attaching forward function to axon.")
     # ! enable blacklist, priority
-    axon.attach(
+    axon.attach(check).attach(
         forward_fn = scrap,
         # blacklist_fn = blacklist_fn,
         # priority_fn = priority_fn,
@@ -173,13 +188,12 @@ def main( config ):
     bt.logging.info(f"Starting axon server on port: {config.axon.port}")
     axon.start()
 
-    # Step 6: Keep the miner alive
+    # Keep the miner alive
     # This loop maintains the miner's operations until intentionally stopped.
     bt.logging.info(f"Starting main loop")
     step = 0
     while True:
         try:
-            # TODO(developer): Define any additional operations to be performed by the miner.
             # Below: Periodically update our knowledge of the network graph.
             if step % 5 == 0:
                 metagraph = subtensor.metagraph(config.netuid)
@@ -205,7 +219,12 @@ def main( config ):
             bt.logging.error(traceback.format_exc())
             continue
 
+# TODO: Add error handling for when the miner cannot start or stop
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
-    main( get_config() )
+    try:
+        main( get_config() )
+    except Exception as e:
+        bt.logging.error(f"Failed to start the miner due to: {str(e)}")
+        sys.exit(1)

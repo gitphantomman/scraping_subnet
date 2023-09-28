@@ -1,9 +1,7 @@
-# The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# This is the MIT License (MIT)
+# The copyright is held by Yuma Rao and Chris Wilson, dated 2023
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+# This license grants permission, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
 # and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -11,16 +9,14 @@
 # The above copyright notice and this permission notice shall be included in all copies or substantial portions of
 # the Software.
 
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
+# The software is provided as is, without any warranty of any kind, express or implied, including but not limited to
+# the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall
+# the authors or copyright holders be liable for any claim, damages or other liability, whether in an action
+# of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other
+# dealings in the software.
 
-# Bittensor Validator Template:
-# TODO(developer): Rewrite based on protocol defintion.
 
-# Step 1: Import necessary libraries and modules
+# Importing necessary libraries and modules
 import os
 import time
 import torch
@@ -29,20 +25,19 @@ import traceback
 import bittensor as bt
 import storeWB
 import scoreModule
-# import this repo
 import scraping
 
 
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
-
+    """
+    This function sets up and parses command-line arguments.
+    """
     parser = argparse.ArgumentParser()
-    # TODO(developer): Adds your custom validator arguments to the parser.
-    parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
-
     
-    # * Adds wandb arguments for storing
-    parser.add_argument('--wandb.runid', default = 'w8937gls', help = 'Adds a wandb run id to store')
+    # TODO: Validate the wandb run id and project name
+    # Adds wandb arguments for storing
+    parser.add_argument('--wandb.runid', default = 'g1ibv7db', help = 'Adds a wandb run id to store')
     parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
     
     # Adds override arguments for network and netuid.
@@ -54,7 +49,7 @@ def get_config():
     # Adds wallet specific arguments i.e. --wallet.name ..., --wallet.hotkey ./. or --wallet.path ...
     bt.wallet.add_args(parser)
     # Parse the config (will take command-line arguments if provided)
-    # To print help message, run python3 template/miner.py --help
+    # To print help message, run python3 neurons/validator.py --help
     config =  bt.config(parser)
 
     # Logging is crucial for monitoring and debugging purposes.
@@ -68,16 +63,30 @@ def get_config():
         )
     )
     # Ensure the logging directory exists.
+    # TODO: Handle error if directory creation fails
     if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=True)
 
     # Return the parsed config.
     return config
 
-def store_wandb(all_data, projectName, runid):
-    storeWB.store(all_data = all_data, projectName = projectName, run_id = runid)
+# Wandb: append data to reddit dataset
+def store_reddit_wandb(all_data, projectName, runid):
+    """
+    This function stores all data from reddit to wandb.
+    """
+    storeWB.store_reddit(all_data = all_data, projectName = projectName, run_id = runid)
 
+# Wandb: append data to twitter dataset
+def store_Twitter_wandb(all_data, projectName, runid):
+    """
+    This function stores all data from twitter to wandb.
+    """
+    storeWB.store_twitter(all_data = all_data, projectName = projectName, run_id = runid)
 
 def main( config ):
+    """
+    This is the main function that sets up logging, initializes bittensor objects, and starts the validator loop.
+    """
     # Set up logging with the provided configuration and directory.
     bt.logging(config=config, logging_dir=config.full_path)
     bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
@@ -112,73 +121,88 @@ def main( config ):
         bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
 
     bt.logging.info("Building validation weights.")
+
+    # Init miner scores and other params
     alpha = 0.9
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
-    bt.logging.info(f"Weights: {scores}")
-
-    bt.logging.info("Starting validator loop.")
     step = 0
     # TODO: Have to change data_per_step or none
     data_per_step = 50
+    
+    bt.logging.info(f"Weights: {scores}")
+    bt.logging.info("Starting validator loop.")
+    
+    # Main loop
     while True:
         try:
-            # TODO(developer): Define how the validator selects a miner to query, how often, etc.
-            # ? Broadcast a query to all miners on the network.
-            
-            responses = dendrite.query(
-                # TODO: Send the query to all axons in the network.
-                metagraph.axons,
-                # Construct a dummy query.
-                scraping.protocol.Scrap( scrap_input = data_per_step ), # Construct a dummy query.
-                # All responses have the deserialize function called on them before returning.
-                deserialize = True, 
-            )
-
-            # Log the results for monitoring purposes.
-            # bt.logging.info(f"Received dummy responses: {responses}")
-
-            # ! Store into Wandb
-
-            store_wandb(responses, config.wandb.project, config.wandb.runid)
-
-            # TODO(developer): Define how the validator scores responses.
-            # Adjust the scores based on responses from miners.
-            for i, resp_i in enumerate(responses):
-                # Initialize the score for the current miner's response.
-                score = 0
-                
-                # Check if the miner has provided the correct response by doubling the dummy input.
-                # If correct, set their score for this round to 1.
-                # ? Calulate each miner's score
-                score = scoreModule.redditScore(resp_i)
-                print(f"score[{i}]:", score)
-                # if resp_i == step * 2:
-                #     score = 1
-
-                # Update the global score of the miner.
-                # This score contributes to the miner's weight in the network.
-                # A higher weight means that the miner has been consistently responding correctly.
-                scores[i] = alpha * scores[i] + (1 - alpha) * score
-
             # Periodically update the weights on the Bittensor blockchain.
             if (step + 1) % 2 == 0:
-                # TODO(developer): Define how the validator normalizes scores before setting weights.
-                weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
+                # ? Broadcast a GET_DATA query to all miners on the network.
+                responses = dendrite.query(
+                    metagraph.axons,
+                    # Construct a scraping query.
+                    scraping.protocol.TwitterScrap( scrap_input = data_per_step ), # Construct a scraping query.
+                    # All responses have the deserialize function called on them before returning.
+                    deserialize = True, 
+                )                
 
+                # ! Store into Wandb
+                store_Twitter_wandb(responses, config.wandb.project, config.wandb.runid)
+                
+                # Update score
+                for i, resp_i in enumerate(responses):
+                # Initialize the score for the current miner's response.
+                    score = 0
+                    # Evaluate how is the miner's performance.
+                    # ? Calulate each miner's score
+                    score = scoreModule.twitterScore(resp_i)
+                    # Update the global score of the miner.
+                    # This score contributes to the miner's weight in the network.
+                    # A higher weight means that the miner has been consistently responding correctly.
+                    scores[i] = alpha * scores[i] + (1 - alpha) * score
+
+
+
+                # Adjust the scores based on responses from miners.
+                weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 # ! Bug fix on maxWeightExceed
-                # weights = torch.where(weights > 0.01, torch.tensor(0.01).to(weights.device), weights)
                 bt.logging.info(f"Setting weights: {weights}")
-                # This is a crucial step that updates the incentive mechanism on the Bittensor blockchain.
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
                 result = subtensor.set_weights(
                     netuid = config.netuid, # Subnet to set weights on.
                     wallet = wallet, # Wallet to sign set weights using hotkey.
-                    uids = [0], # Uids of the miners to set weights for.
-                    weights = [1.0], # Weights to set for the miners.
+                    uids = metagraph.uids, # Uids of the miners to set weights for.
+                    weights = weights, # Weights to set for the miners.
                     wait_for_inclusion = True
                 )
                 if result: bt.logging.success('Successfully set weights.')
-                else: bt.logging.error('Failed to set weights.') 
+                else: bt.logging.error('Failed to set weights.')
+
+            else:
+                # ? Broadcast CHECK_MINER query to all miners on the network.
+                responses = dendrite.query(
+                    metagraph.axons,
+                    # Construct a checking query.
+                    scraping.protocol.CheckMiner( check_url_hash = "4744c2327123a4025dbe40cf943bf9b2293858f57f7a278c06875c66427e4787" ), # Construct a checking query.
+                    # All responses have the deserialize function called on them before returning.
+                    deserialize = True, 
+                )
+                responses_urls = []
+                for response in responses:
+                    if(response == None): 
+                        responses_urls.append('NONE')
+                    else:
+                        responses_urls.append(response['url'])
+                
+                new_scores = scoreModule.checkScore(responses_urls)
+                # update global miners score.
+                for i in range(0, len(responses)):
+                    scores[i] = alpha * scores[i] + (1 - alpha) * ( new_scores[i])
+                
+                # Log the results for monitoring purposes.
+                bt.logging.info(f"Received checking responses: {responses}")
+                bt.logging.info(f"new score by checking: {scores}")
+
 
             # End the current step and prepare for the next iteration.
             step += 1
@@ -203,3 +227,4 @@ if __name__ == "__main__":
     config = get_config()
     # Run the main function.
     main( config )
+
