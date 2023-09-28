@@ -25,11 +25,11 @@ import storeWB
 # Function to calculate score based on miner's response from Reddit
 def redditScore( response ):
     """
-    This function calculates a score based on the response from Reddit.
+    This function calculates a score based on the response from Miner.
     The score is calculated based on the time difference from the current time and the uniqueness of the response.
 
     Args:
-        response (list): The response from Reddit.
+        response (list): The response from Miner.
 
     Returns:
         float: The calculated score.
@@ -76,11 +76,11 @@ def redditScore( response ):
 # Function to calculate score based on miner's response from Twitter
 def twitterScore( response ):
     """
-    This function calculates a score based on the response from Twitter.
+    This function calculates a score based on the response from Miner.
     The score is calculated based on the time difference from the current time and the uniqueness of the response.
 
     Args:
-        response (list): The response from Twitter.
+        response (list): The response from Miner.
 
     Returns:
         float: The calculated score.
@@ -93,7 +93,7 @@ def twitterScore( response ):
 
     # Fetch historical data
     history = storeWB.returnTwitterData()
-    history_ids = [item['id'] for index, item in history.iterrows()]
+    history_ids = [item['url_hash'] for index, item in history.iterrows()]
 
     # TODO: Add error handling for empty response
     if(response is not None):
@@ -105,7 +105,7 @@ def twitterScore( response ):
             total_time_diff += time_diff
 
             # Check if post already exists in history
-            if post['id'] in history_ids:
+            if post['url_hash'] in history_ids:
                 exist_count += 1
 
         # Calculate unique score and average time difference

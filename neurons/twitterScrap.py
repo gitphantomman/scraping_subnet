@@ -17,8 +17,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE S
 DEALINGS IN THE SOFTWARE.
 """
 
-import tweepy
-# from tweepy import streaming
+
 import os
 from dotenv import load_dotenv
 import time
@@ -31,7 +30,7 @@ load_dotenv()
 bearer_token = os.getenv("BEARER_TOKEN")
 
 
-def scrapTwitter(max_limit = 100, key = "bittensor"):
+def scrapTwitter(max_limit = 50, key = "bittensor"):
     """
     Function to scrape recent tweets based on a keyword.
 
