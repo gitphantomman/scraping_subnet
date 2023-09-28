@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# Copyright © 2023 <your name>
+# Copyright © 2023 Chris Wilson
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software wthout restriction, including without limitation
@@ -96,7 +96,6 @@ def main( config ):
         bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
     # Set up miner functionalities
-    # The following functions control the miner's response to incoming requests.
     # The   function decides if a request should be ignored.
     def blacklist_fn( synapse: scraping.protocol.Scrap ) -> bool:
         # Runs before the synapse data has been deserialized (i.e. before synapse.data is available).
@@ -127,28 +126,27 @@ def main( config ):
         bt.logging.trace(f'Prioritizing {synapse.dendrite.hotkey} with value: ', prirority)
         return prirority
 
-    # This is the core miner function, which decides the miner's response to a valid, high-priority request.
     async def check( synapse: scraping.protocol.CheckMiner) -> scraping.protocol.CheckMiner:
+        # This function runs after the CheckMiner synapse has been deserialized.
         bt.logging.info(f"url: {synapse.check_url_hash} \n" )
         synapse.check_output = twitter_db.find_by_url_hash(synapse.check_url_hash)
         bt.logging.info(f"check_output: {synapse.check_output}")
+
         return synapse
     
     def scrap( synapse: scraping.protocol.TwitterScrap) -> scraping.protocol.TwitterScrap: 
-        # This function runs after the synapse has been deserialized (i.e. after synapse.data is available).
+        # This function runs after the TwitterScrap synapse has been deserialized (i.e. after synapse.data is available).
         # This function runs after the blacklist and priority functions have been called.
-        # Below: simple template logic: return the input value multiplied by 2.
-        # If you change this, your miner will lose emission in the network incentive landscape.
-        # if type(synapse) is type(scraping.protocol.TwitterScrap):
-
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
-        latest_posts = twitter_db.fetch_latest_posts(synapse.scrap_input)
-        synapse.scrap_output = latest_posts
-        bt.logging.info(f"number of response data: {len(latest_posts)} \n")
+        # Fetch latest posts from miner's local database.
+        synapse.scrap_output = twitter_db.fetch_latest_posts(synapse.scrap_input)
+        bt.logging.info(f"number of response data: {len(synapse.scrap_output)} \n")
+
         return synapse
 
     # Build and link miner functions to the axon.
     # The axon handles request processing, allowing validators to send this process requests.
+    
     axon = bt.axon( wallet = wallet )
     bt.logging.info(f"Axon {axon}")
 

@@ -2,7 +2,7 @@ import wandb
 import csv
 import pandas as pd
 # * Store all responses from all miners to wandb
-def store(all_data, projectName, run_id):
+def store_reddit(all_data, projectName, run_id):
 
     run = wandb.init(project = projectName,  resume="allow",  id = run_id)
 
