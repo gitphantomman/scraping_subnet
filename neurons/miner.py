@@ -158,7 +158,9 @@ def main( config ):
         """
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
         # Fetch latest posts from miner's local database.
-        synapse.scrap_output = twitter_db.fetch_latest_posts(synapse.scrap_input)
+        fetched_data = twitter_db.fetch_latest_posts(synapse.scrap_input)
+        print(fetched_data)
+        synapse.scrap_output = fetched_data
         bt.logging.info(f"number of response data: {len(synapse.scrap_output)} \n")
 
         return synapse

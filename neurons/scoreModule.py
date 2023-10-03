@@ -109,8 +109,8 @@ def twitterScore( response ):
                 exist_count += 1
 
         # Calculate unique score and average time difference
-        unique_score = exist_count / len(response)
-        avg_time_diff = total_time_diff / len(response)
+        unique_score = (exist_count + 1) / (len(response) + 1)
+        avg_time_diff = total_time_diff / (len(response) + 1)
 
         # Calculate time score
         if avg_time_diff < 864000 :
@@ -163,5 +163,3 @@ def checkScore(responses):
     scoreArray = [score[f'{i}'] for i in range(0, len(responses))]
 
     return scoreArray
-
-checkScore()
