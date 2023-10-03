@@ -17,9 +17,9 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE S
 DEALINGS IN THE SOFTWARE.
 """
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy import create_engine, Column, String, DateTime, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 # Create a base class for declarative models

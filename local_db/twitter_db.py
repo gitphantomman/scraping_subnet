@@ -17,9 +17,10 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE S
 DEALINGS IN THE SOFTWARE.
 """
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy import create_engine, Column, String, DateTime, Text, Boolean
+# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import  sessionmaker
 from datetime import datetime
 import hashlib
 
@@ -48,7 +49,7 @@ class TwitterPost(Base):
     uploaded = Column(Boolean, default = False)
 
 # Create a SQLite engine for the database
-engine = create_engine('sqlite:///twitter_data.db')
+engine = create_engine('sqlite:///./twitter_data.db')
 
 # Create all tables in the engine
 Base.metadata.create_all(engine)
@@ -115,7 +116,7 @@ def fetch_latest_posts(n = 50):
         return []
     finally:
         session.close()
-
+print(fetch_latest_posts(10))
 def find_by_url_hash(url_hash):
     """
     Fetches the Twitter post from the database based on the URL hash.

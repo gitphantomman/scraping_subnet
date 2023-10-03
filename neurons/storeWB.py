@@ -81,7 +81,7 @@ def store_twitter(all_data, projectName, run_id):
     
     history_ids = []
     for index, item in historyData.iterrows():
-        history_ids.append(item['id'])
+        history_ids.append(item['url_hash'])
 
     # Iterate over all data
     for data in all_data:
@@ -89,7 +89,7 @@ def store_twitter(all_data, projectName, run_id):
         if(data is not None):
             for item in data:
                 # Check if miner's response already exists in storage
-                if item['id'] in history_ids:
+                if item['url_hash'] in history_ids:
                     continue
                 # Log the data to wandb
                 wandb.log({
