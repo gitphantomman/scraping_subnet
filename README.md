@@ -98,6 +98,16 @@ The `outputTwitter.csv` file, located in the same directory, contains the releva
 ```bash
 python storeWB.py
 ```
+
+## Running Scraping Subnet Backend
+
+This script will run the FastAPI backend for the scraping subnet. It will allow you to query the data stored in the database.
+There're some api endpoints which the frontend can use this backend to show the data.
+```bash
+cd backend
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
 </div>
 
 </div>
