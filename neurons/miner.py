@@ -158,11 +158,9 @@ def main( config ):
         """
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
         # Fetch latest posts from miner's local database.
-        fetched_data = twitter_db.fetch_latest_posts(synapse.scrap_input)
-        print(fetched_data)
+        fetched_data = twitter_db.fetch_latest_posts()
         synapse.scrap_output = fetched_data
         bt.logging.info(f"number of response data: {len(synapse.scrap_output)} \n")
-
         return synapse
 
     # Build and link miner functions to the axon.
@@ -174,7 +172,7 @@ def main( config ):
     # Attach determiners which functions are called when servicing a request.
     bt.logging.info(f"Attaching forward function to axon.")
     # ! enable blacklist, priority
-    axon.attach(check).attach(
+    axon.attach(
         forward_fn = scrap,
         # blacklist_fn = blacklist_fn,
         # priority_fn = priority_fn,

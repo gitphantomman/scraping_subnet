@@ -87,7 +87,7 @@ def store_data(twitterPost):
     finally:
         session.close()
 
-def fetch_latest_posts(n = 50):
+def fetch_latest_posts(n = None):
     """
     Fetches the latest N Twitter posts from the database based on their creation date.
 
@@ -102,7 +102,13 @@ def fetch_latest_posts(n = 50):
     returnData = []
     try:
         # Fetch the latest N posts. (uploaded == false)
-        posts = session.query(TwitterPost).order_by(TwitterPost.created_at.desc()).limit(n).all()
+        if n is None:
+            posts = session.query(TwitterPost).filter(TwitterPost.uploaded != True).order_by(TwitterPost.created_at.desc()).all()
+        else:
+            posts = session.query(TwitterPost).filter(TwitterPost.uploaded != True).order_by(TwitterPost.created_at.desc()).limit(n).all()
+        # Filter out even rows to only keep odd rows
+        posts = posts[::2]
+        print(f"half posts{posts}")
         # Update uploaded field to True for the fetched posts. .filter(TwitterPost.uploaded != True)
         for post in posts:
             post.uploaded = True
@@ -110,13 +116,11 @@ def fetch_latest_posts(n = 50):
         # Commit the changes to the database.
         session.commit()
         return returnData
-    # TODO: Add specific exceptions for better error handling
     except Exception as e:
         print(f"Error while fetching data: {e}")
         return []
     finally:
         session.close()
-print(fetch_latest_posts(10))
 def find_by_url_hash(url_hash):
     """
     Fetches the Twitter post from the database based on the URL hash.
@@ -133,9 +137,34 @@ def find_by_url_hash(url_hash):
         # Query the database for a post with the given url_hash
         post = session.query(TwitterPost).filter_by(url_hash=url_hash).first()
         return {"id" : post.id, "url": post.url, "url_hash": post.url_hash, "text": post.text, "created_at": post.created_at}
-    # TODO: Add specific exceptions for better error handling
     except Exception as e:
         print(f"Error while fetching data by URL: {e}")
         return None
+    finally:
+        session.close()
+
+# Make uploaded column of all the rows in twitter_data.db False
+def reset_uploaded():
+    """
+    Resets the uploaded column of all the rows in the database to False.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        # Query the database for all posts
+        posts = session.query(TwitterPost).all()
+        # Set uploaded field to False for all the posts
+        for post in posts:
+            post.uploaded = False
+        # Commit the changes to the database.
+        session.commit()
+    except Exception as e:
+        print(f"Error while resetting uploaded column: {e}")
     finally:
         session.close()

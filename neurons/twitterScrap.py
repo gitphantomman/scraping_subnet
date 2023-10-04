@@ -26,7 +26,7 @@ import requests
 from local_db.twitter_db import store_data
 load_dotenv()
 
-# Fetch bearer token from environment variables
+# Get bearer token from environment variables
 bearer_token = os.getenv("BEARER_TOKEN")
 
 
@@ -52,12 +52,15 @@ def scrapTwitter(max_limit = 50, key = "bittensor"):
         response = requests.request("GET", url, headers=headers, data=payload)
         # Parse the JSON response
         returnData = response.json()['data']
-        # TODO: Add error handling for empty or error responses
+        if returnData.__len__() == 0:
+            # If no tweets are found, return
+            print("No tweets found.")
+            return
         for twitterPost in returnData:
             # Store each tweet into the database
             store_data(twitterPost)
     except Exception as e:
-        print(e)
+        print('Invalid Key')
 
 def continuous_scrape(interval=16):
     """
@@ -78,7 +81,6 @@ def continuous_scrape(interval=16):
             time.sleep(interval)
         except Exception as e:
             print(f"Error occurred: {e}")
-            # TODO: Add error handling for continuous failures
             time.sleep(16) # Wait for 30s before trying again
 
 if __name__ == "__main__":

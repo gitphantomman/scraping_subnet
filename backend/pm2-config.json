@@ -1,0 +1,11 @@
+{
+    "apps": [
+        {
+            "name": "scraping-backend",
+            "cmd": "uvicorn",
+            "args": "main:app --host 0.0.0.0 --port 8000",
+            "autorestart": true,
+            "exec_mode": "fork"
+        }
+    ]
+}

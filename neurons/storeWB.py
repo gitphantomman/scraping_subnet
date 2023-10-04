@@ -85,8 +85,7 @@ def store_twitter(all_data, projectName, run_id):
 
     # Iterate over all data
     for data in all_data:
-        # TODO: Add error handling for None data
-        if(data is not None):
+        if data is not None:
             for item in data:
                 # Check if miner's response already exists in storage
                 if item['url_hash'] in history_ids:
@@ -100,8 +99,12 @@ def store_twitter(all_data, projectName, run_id):
                     "created_at": item['created_at'],
                     "type": item['type']
                 })
+        else:
+            print("No data found")
     # Finish the run
     run.finish()
+
+
 
 # Function to return all data in storage for Reddit data
 def returnRedditdata(project = "scraping_subnet-neurons", id = "w8937gls"):

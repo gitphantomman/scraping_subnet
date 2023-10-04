@@ -85,30 +85,44 @@ def twitterScore( response ):
     Returns:
         float: The calculated score.
     """
-    # Initialize variables
+    # Initialize all variables
     timeScore = 1
-    total_time_diff = 0
     unique_score = 1
+
+    total_time_diff = 0
     exist_count = 0
 
+    wrong_count = 0
     # Fetch historical data
     history = storeWB.returnTwitterData()
     history_ids = [item['url_hash'] for index, item in history.iterrows()]
 
-    # TODO: Add error handling for empty response
-    if(response is not None):
-        # Calculate average time difference from current time
+    if response is not None and response != []:
+        # Choose 50 random posts from the response
+        if response.__len__() > 50:
+            response = response[:50]
+        
+        # Calculate total time difference from current time and count of existing posts
         for post in response:
+            # Calculate total time difference from current time
             given_time = datetime.fromisoformat(post['created_at'])
             current_time = datetime.now()
-            time_diff = (current_time - given_time).total_seconds()
-            total_time_diff += time_diff
-
+            total_time_diff += (current_time - given_time).total_seconds()
+            
             # Check if post already exists in history
-            if post['url_hash'] in history_ids:
+            filtered_data = history[history['url_hash'] == post['url_hash']]
+            if filtered_data.empty or filtered_data is None:
+                # TODO: check url_hash is correct
+                # TODO: validator scrap that post with url and compare created_at
+                continue
+            else:
                 exist_count += 1
+                filtered_data = filtered_data.iloc[0]
+                if filtered_data['url'] == post['url'] and filtered_data['created_at'] == post['created_at']:
+                    wrong_count += 1
 
         # Calculate unique score and average time difference
+        # ! from here
         unique_score = (exist_count + 1) / (len(response) + 1)
         avg_time_diff = total_time_diff / (len(response) + 1)
 
@@ -119,7 +133,7 @@ def twitterScore( response ):
             timeScore = 1.0
 
         # Return score calculated by time score and unique score
-        return 1 - 0.15 * timeScore - 0.5 * unique_score
+        return 1 - 0.3 * timeScore - 0.5 * unique_score
     else:
         return 0
     
