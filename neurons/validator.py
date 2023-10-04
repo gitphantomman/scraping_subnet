@@ -129,8 +129,6 @@ def main( config ):
     alpha = 0.9
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
     step = 0
-    # TODO: Have to change data_per_step or none
-    data_per_step = 50
     
     bt.logging.info(f"Weights: {scores}")
     bt.logging.info("Starting validator loop.")
@@ -138,37 +136,42 @@ def main( config ):
     # Main loop
     while True:
         try:
-            # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 2 == 0:
-                # ? Broadcast a GET_DATA query to all miners on the network.
-                responses = dendrite.query(
-                    metagraph.axons,
-                    # Construct a scraping query.
-                    scraping.protocol.TwitterScrap( scrap_input = data_per_step ), # Construct a scraping query.
-                    # All responses have the deserialize function called on them before returning.
-                    deserialize = True, 
-                )                
+            # ? Broadcast a GET_DATA query to all miners on the network.
+            responses = dendrite.query(
+                metagraph.axons,
+                # Construct a scraping query.
+                scraping.protocol.TwitterScrap(  ), # Construct a scraping query.
+                # All responses have the deserialize function called on them before returning.
+                deserialize = True, 
+            )                
 
-                # ! Store into Wandb
+            # Store into Wandb
+            # check if there is any data
+            if len(responses) > 0:
+                # store data into wandb
                 store_Twitter_wandb(responses, config.wandb.project, config.wandb.runid)
-                
-                # Update score
-                for i, resp_i in enumerate(responses):
-                # Initialize the score for the current miner's response.
-                    score = 0
+            else:
+                print("No data found")
+
+            # Update score
+            for i, resp_i in enumerate(responses):
+            # Initialize the score of each miner.
+                score = 0
+                # If the miner did not respond, set its score to 0.
+                if resp_i == None:
                     # Evaluate how is the miner's performance.
-                    # ? Calulate each miner's score
                     score = scoreModule.twitterScore(resp_i)
                     # Update the global score of the miner.
                     # This score contributes to the miner's weight in the network.
                     # A higher weight means that the miner has been consistently responding correctly.
                     scores[i] = alpha * scores[i] + (1 - alpha) * score
-
+                scores[i] = alpha * scores[i]
+            # Periodically update the weights on the Bittensor blockchain.
+            if (step + 1) % 2 == 0:
 
 
                 # Adjust the scores based on responses from miners.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
-                # ! Bug fix on maxWeightExceed
                 bt.logging.info(f"Setting weights: {weights}")
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
                 result = subtensor.set_weights(
@@ -181,30 +184,30 @@ def main( config ):
                 if result: bt.logging.success('Successfully set weights.')
                 else: bt.logging.error('Failed to set weights.')
 
-            else:
-                # ? Broadcast CHECK_MINER query to all miners on the network.
-                responses = dendrite.query(
-                    metagraph.axons,
-                    # Construct a checking query.
-                    scraping.protocol.CheckMiner( check_url_hash = "4744c2327123a4025dbe40cf943bf9b2293858f57f7a278c06875c66427e4787" ), # Construct a checking query.
-                    # All responses have the deserialize function called on them before returning.
-                    deserialize = True, 
-                )
-                responses_urls = []
-                for response in responses:
-                    if(response == None): 
-                        responses_urls.append('NONE')
-                    else:
-                        responses_urls.append(response['url'])
+            # else:
+            #     # Broadcast CHECK_MINER query to all miners on the network.
+            #     responses = dendrite.query(
+            #         metagraph.axons,
+            #         # Construct a checking query.
+            #         scraping.protocol.CheckMiner( check_url_hash = "4744c2327123a4025dbe40cf943bf9b2293858f57f7a278c06875c66427e4787" ), # Construct a checking query.
+            #         # All responses have the deserialize function called on them before returning.
+            #         deserialize = True, 
+            #     )
+            #     responses_urls = []
+            #     for response in responses:
+            #         if(response == None): 
+            #             responses_urls.append('NONE')
+            #         else:
+            #             responses_urls.append(response['url'])
                 
-                new_scores = scoreModule.checkScore(responses_urls)
-                # update global miners score.
-                for i in range(0, len(responses)):
-                    scores[i] = alpha * scores[i] + (1 - alpha) * ( new_scores[i])
+            #     new_scores = scoreModule.checkScore(responses_urls)
+            #     # update global miners score.
+            #     for i in range(0, len(responses)):
+            #         scores[i] = alpha * scores[i] + (1 - alpha) * ( new_scores[i])
                 
-                # Log the results for monitoring purposes.
-                bt.logging.info(f"Received checking responses: {responses}")
-                bt.logging.info(f"new score by checking: {scores}")
+            #     # Log the results for monitoring purposes.
+            #     bt.logging.info(f"Received checking responses: {responses}")
+            #     bt.logging.info(f"new score by checking: {scores}")
 
 
             # End the current step and prepare for the next iteration.

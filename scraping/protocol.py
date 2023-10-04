@@ -26,7 +26,7 @@ class RedditScrap(bt.Synapse):
     It is used to scrape data from Reddit.
     """
     # Required request input, filled by sending dendrite caller.
-    scrap_input: int
+    scrap_input: typing.Optional[int] = None
 
     # Optional request output, filled by receiving axon.
     # TODO: Add error handling for when scrap_output is None
@@ -45,7 +45,7 @@ class TwitterScrap(bt.Synapse):
     It is used to scrape data from Twitter.
     """
     # Required request input, filled by sending dendrite caller.
-    scrap_input: int
+    scrap_input: typing.Optional[int] = None
 
     # Optional request output, filled by receiving axon.
     # TODO: Add error handling for when scrap_output is None
