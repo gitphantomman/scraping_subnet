@@ -20,7 +20,7 @@ on Bittensor's main-network (real TAO, to be released), Bittensor's test-network
 
 # Introduction
 
-Data scraping plays a pivotal role in many AI and machine learning models, often serving as the partial layer for various subnets, including s1. We aim to extract data from platforms like Reddit, Twitter, and other social media sites, consolidating this information into shared storage solutions like Weights & Biases (wandb). In the future, we plan to utilize the storage subnet of Bittensor to enhance our data storage capabilities. 
+    Data scraping plays a pivotal role in many AI and machine learning models, often serving as the partial layer for various subnets, including s1. We aim to extract data from platforms like Reddit, Twitter, and other social media sites, consolidating this information into shared storage solutions like Weights & Biases (wandb). In the future, we plan to utilize the storage subnet of Bittensor to enhance our data storage capabilities. 
 
 ![Alt text](docs/Screenshot_18.png)
 
@@ -124,10 +124,10 @@ The validator issues queries to miners for data, compute scores for the provided
 1. You need wandb account. If you don't have one, you can obtain it from the [wandb](https://wandb.ai/authorize).
 2. Then you have to initialize wandb using `wandb login` command.
 
-```bash
-pip install wandb
-wandb login
-```
+    ```bash
+    pip install wandb
+    wandb login
+    ```
 3. You have to create a project in wandb. You can use the `scraping_subnet` project as a template.
 4. You need to create two runs in the project for twitter data storage and reddit data storage using below script.
 
@@ -135,7 +135,8 @@ wandb login
     cd neurons
     python makeWandb.py
     ```
-    It prints two run ids. You have to set these run ids when you run the validator.
+    It prints run id. You have to set this run id when you run the validator.
+    Actually you need two run_id for now, so you should run this script twice.
 
 ## Running Validator Script
 
@@ -147,6 +148,7 @@ python validator.py
     --subtensor.network <your chain url> # blockchain endpoint you want to connect
     --wallet.name <your validator wallet>  # name of your wallet
     --wallet.hotkey <your validator hotkey> # hotkey name of your wallet
+    --wandb.username <your wandb username> # your wandb username
     --wandb.project <your wandb project name> # the wandb project name you want to save to (Default: zhjgapym)
     --wandb.twitter_run_id <your wandb twitter run id> # the wandb run name you want to save twitter data to (Default: am4ybwqi)
     --wandb.reddit_run_id <your wandb reddit run id> # the wandb run name you want to save reddit data to (Default: ga3vulxa) 

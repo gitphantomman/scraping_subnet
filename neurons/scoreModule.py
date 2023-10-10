@@ -23,7 +23,7 @@ import storeWB
 
 
 # Function to calculate score based on miner's response from Reddit
-def redditScore( response, project = 'scraping_subnet-neurons', run_id = 'w8937gls' ):
+def redditScore( response, username='aureliojafer', project = 'scraping_subnet-neurons', run_id = 'w8937gls' ):
     """
     This function calculates a score based on the response from Miner.
     The score is calculated based on the time difference from the current time and the uniqueness of the response.
@@ -44,7 +44,7 @@ def redditScore( response, project = 'scraping_subnet-neurons', run_id = 'w8937g
     total_length = 0
     wrong_count = 0
     # Fetch historical data
-    history = storeWB.returnData(project=project, id=run_id)
+    history = storeWB.returnData(username=username, project=project, id=run_id)
 
     if response is not None and response != []:
         total_length = len(response)
@@ -93,7 +93,7 @@ def redditScore( response, project = 'scraping_subnet-neurons', run_id = 'w8937g
     
 import random
 # Function to calculate score based on miner's response from Twitter
-def twitterScore( response , project = 'scraping_subnet-neurons', run_id = 'g1ibv7db'):
+def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-neurons', run_id = 'g1ibv7db'):
     """
     This function calculates a score based on the response from Miner.
     The score is calculated based on the time difference from the current time and the uniqueness of the response.
@@ -113,7 +113,7 @@ def twitterScore( response , project = 'scraping_subnet-neurons', run_id = 'g1ib
     total_length = 0
     wrong_count = 0
     # Fetch historical data
-    history = storeWB.returnData(project=project, id=run_id)
+    history = storeWB.returnData(username= username, project=project, id=run_id)
 
     if response is not None and response != []:
         # Choose 50 random posts from the response

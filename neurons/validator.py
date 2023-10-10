@@ -40,6 +40,7 @@ def get_config():
     
     # TODO: Validate the wandb run id and project name
     # Adds wandb arguments for storing
+    parser.add_argument('--wandb.username', default = 'aureliojafer', help = 'Adds a wandb username to store data')
     parser.add_argument('--wandb.twitter_run_id', default = 'g1ibv7db', help = 'Adds a wandb run id to store twitter scraping data')
     parser.add_argument('--wandb.reddit_run_id', default = 'w8937gls', help = 'Adds a wandb run id to store reddit scraping data')
     parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
@@ -73,18 +74,18 @@ def get_config():
     return config
 
 # Wandb: append data to reddit dataset
-def store_Reddit_wandb(all_data, projectName, runid):
+def store_Reddit_wandb(all_data, username, projectName, runid):
     """
     This function stores all data from reddit to wandb.
     """
-    storeWB.store_reddit(all_data = all_data, projectName = projectName, run_id = runid)
+    storeWB.store_reddit(all_data = all_data, username= username, projectName = projectName, run_id = runid)
 
 # Wandb: append data to twitter dataset
-def store_Twitter_wandb(all_data, projectName, runid):
+def store_Twitter_wandb(all_data, username, projectName, runid):
     """
     This function stores all data from twitter to wandb.
     """
-    storeWB.store_twitter(all_data = all_data, projectName = projectName, run_id = runid)
+    storeWB.store_twitter(all_data = all_data, username= username, projectName = projectName, run_id = runid)
 import random
 def main( config ):
     """
@@ -200,6 +201,7 @@ def main( config ):
                     scraping.protocol.TwitterScrap(), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
+                    timeout = 30
                 )                
 
                 
@@ -211,19 +213,19 @@ def main( config ):
                     # If the miner did not respond, set its score to 0.
                     if resp_i != None:
                         # Evaluate how is the miner's performance.
-                        score = scoreModule.twitterScore(resp_i, project = config.wandb.project, run_id = config.wandb.twitter_run_id)
+                        score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = config.wandb.twitter_run_id)
                         # Update the global score of the miner.
                         # This score contributes to the miner's weight in the network.
                         # A higher weight means that the miner has been consistently responding correctly.
-                        scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score 
-                    scores[i] = alpha * scores[i]
+                    scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score 
+                    
                 bt.logging.info(f"Scores: {scores}")
                 # Store into Wandb
                 # check if there is any data
                 
                 if len(responses) > 0:
                     # store data into wandb
-                    store_Twitter_wandb(responses, config.wandb.project, config.wandb.twitter_run_id)
+                    store_Twitter_wandb(responses, config.wandb.username, config.wandb.project, config.wandb.twitter_run_id)
                 else:
                     print("No data found")
             # Periodically update the weights on the Bittensor blockchain.
@@ -233,7 +235,8 @@ def main( config ):
                     # Construct a scraping query.
                     scraping.protocol.RedditScrap(), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
-                    deserialize = True, 
+                    deserialize = True,
+                    timeout = 30 
                 )                
 
                 
@@ -245,19 +248,19 @@ def main( config ):
                     # If the miner did not respond, set its score to 0.
                     if resp_i != None:
                         # Evaluate how is the miner's performance.
-                        score = scoreModule.redditScore(resp_i, project = config.wandb.project, run_id = config.wandb.reddit_run_id)
+                        score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = config.wandb.reddit_run_id)
                         # Update the global score of the miner.
                         # This score contributes to the miner's weight in the network.
                         # A higher weight means that the miner has been consistently responding correctly.
-                        scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score
-                    scores[i] = alpha * scores[i]
+                    scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score
+                    
                 bt.logging.info(f"Scores: {scores}")
                 # Store into Wandb
                 # check if there is any data
                 
                 if len(responses) > 0:
                     # store data into wandb
-                    store_Reddit_wandb(responses, config.wandb.project, config.wandb.reddit_run_id)
+                    store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, config.wandb.reddit_run_id)
                 else:
                     print("No data found")
 
