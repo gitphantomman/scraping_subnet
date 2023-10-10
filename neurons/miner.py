@@ -200,15 +200,15 @@ def main( config ):
     # Build and link miner functions to the axon.
     # The axon handles request processing, allowing validators to send this process requests.
     
-    axon = bt.axon( wallet = wallet )
+    axon = bt.axon( wallet = wallet, port = config.axon.port )
     bt.logging.info(f"Axon {axon}")
 
     # Attach determiners which functions are called when servicing a request.
     bt.logging.info(f"Attaching forward function to axon.")
-    axon.attach(forward_fn = redditScrap, blacklist_fn=blacklist_reddit, priority_fn=priority_reddit).attach(
+    axon.attach(forward_fn = redditScrap).attach(
         forward_fn = twitterScrap,
-        blacklist_fn = blacklist_twitter,
-        priority_fn = priority_twitter,
+        # blacklist_fn = blacklist_twitter,
+        # priority_fn = priority_twitter,
     )
 
     # Serve passes the axon information to the network + netuid we are hosting on.

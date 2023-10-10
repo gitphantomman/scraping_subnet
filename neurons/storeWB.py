@@ -23,7 +23,7 @@ import csv
 import pandas as pd
 
 # Function to store all responses from all miners to wandb
-def store_reddit(all_data, projectName, run_id):
+def store_reddit(all_data, username, projectName, run_id):
     """
     This function stores all responses from all miners to wandb.
 
@@ -37,7 +37,7 @@ def store_reddit(all_data, projectName, run_id):
     run = wandb.init(project = projectName,  resume="allow",  id = run_id)
 
     # Collect registered post ids
-    historyData= returnData(project = projectName, id = run_id)
+    historyData= returnData(username = username, project = projectName, id = run_id)
     
    
     
@@ -73,7 +73,7 @@ def store_reddit(all_data, projectName, run_id):
     run.finish()
 
 # Function to store all responses from all miners to wandb for Twitter data
-def store_twitter(all_data, projectName, run_id):
+def store_twitter(all_data,username, projectName, run_id):
     """
     This function stores all responses from all miners to wandb for Twitter data.
 
@@ -87,7 +87,7 @@ def store_twitter(all_data, projectName, run_id):
     run = wandb.init(project = projectName, resume="allow", id = run_id)
 
     # Collect registered post ids
-    historyData= returnData(project = projectName, id = run_id)
+    historyData= returnData(username = username, project = projectName, id = run_id)
     
     # history_ids = []
     # for index, item in historyData.iterrows():
@@ -125,27 +125,10 @@ def store_twitter(all_data, projectName, run_id):
     run.finish()
 
 
-# Function to output all Reddit data as csv file
-def printRedditCSV(project, id):
-    """
-    This function outputs all Reddit data as csv file.
 
-    Returns:
-        DataFrame: The DataFrame of the history data.
-    """
-    api = wandb.Api()
-    run = api.run(f"aureliojafer/{project}/{id}")
-    historyData = run.history()
-
-    # Write the data to a csv file
-    with open('outputReddit.csv', 'w', newline='') as file:
-        writer = csv.DictWriter(file)
-        writer.writeheader()
-        writer.writerows(historyData)
-    return historyData
 
 # Function to return all data in storage for Twitter data
-def returnData(project, id):
+def returnData(username, project, id):
     """
     This function returns all data in storage for Twitter data.
 
@@ -157,40 +140,7 @@ def returnData(project, id):
         DataFrame: The DataFrame of the history data.
     """
     api = wandb.Api()
-    run = api.run(f"aureliojafer/{project}/{id}")
+    run = api.run(f"{username}/{project}/{id}")
     historyData = run.history()
     return historyData
 
-# Function to output all Twitter data as csv file
-def printTwitterCSV():
-    """
-    This function outputs all Twitter data as csv file.
-
-    Returns:
-        DataFrame: The DataFrame of the history data.
-    """
-    api = wandb.Api()
-    run = api.run("aureliojafer/scraping_subnet-neurons/g1ibv7db")
-    historyData = run.history()
-    if isinstance(historyData, pd.DataFrame):
-        keys = historyData.keys()  # Get column names if historyData is a DataFrame
-    else:
-        # Handle the case where historyData is not a DataFrame
-        keys = historyData.data[0].keys() if hasattr(historyData, 'data') else []
-    
-    # Write the data to a csv file
-    with open('outputTwitter.csv', 'w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=keys)
-        writer.writeheader()
-        
-        if isinstance(historyData, pd.DataFrame):
-            # If historyData is a DataFrame, convert it to a list of dictionaries
-            writer.writerows(historyData.to_dict(orient='records'))
-        else:
-            # Handle the case where historyData is not a DataFrame
-            writer.writerows(historyData)
-    
-    return historyData
-
-# Output all Twitter data as csv file.
-printTwitterCSV()
