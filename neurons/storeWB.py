@@ -43,7 +43,6 @@ def store_reddit(all_data, username, projectName, run_id):
     
     # Iterate over all data
     for data in all_data:
-        # TODO: Add error handling for None data
         if(data is not None):
             for item in data:
                 # Check if miner's response already exists in storage

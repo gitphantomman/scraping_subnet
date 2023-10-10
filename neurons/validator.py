@@ -86,7 +86,9 @@ def store_Twitter_wandb(all_data, username, projectName, runid):
     This function stores all data from twitter to wandb.
     """
     storeWB.store_twitter(all_data = all_data, username= username, projectName = projectName, run_id = runid)
+
 import random
+
 def main( config ):
     """
     This is the main function that sets up logging, initializes bittensor objects, and starts the validator loop.
