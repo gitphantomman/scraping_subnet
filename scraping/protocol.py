@@ -16,8 +16,8 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABI
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from typing import Optional, List, Dict
 
-import typing
 import bittensor as bt
 
 class RedditScrap(bt.Synapse):
@@ -26,13 +26,13 @@ class RedditScrap(bt.Synapse):
     It is used to scrape data from Reddit.
     """
     # Required request input, filled by sending dendrite caller.
-    scrap_input: typing.Optional[int] = None
+    scrap_input: Optional[int] = None
 
     # Optional request output, filled by receiving axon.
     # TODO: Add error handling for when scrap_output is None
-    scrap_output: typing.Optional[list[dict]] = None
+    scrap_output: Optional[List[Dict]] = None
 
-    def deserialize(self) -> list[dict]:
+    def deserialize(self) -> List[Dict]:
         """
         Deserialize the scrap_output into a list of dictionaries.
         """
@@ -45,13 +45,13 @@ class TwitterScrap(bt.Synapse):
     It is used to scrape data from Twitter.
     """
     # Required request input, filled by sending dendrite caller.
-    scrap_input: typing.Optional[int] = None
+    scrap_input: Optional[int] = None
 
     # Optional request output, filled by receiving axon.
     # TODO: Add error handling for when scrap_output is None
-    scrap_output: typing.Optional[list[dict]] = None
+    scrap_output: Optional[List[Dict]] = None
 
-    def deserialize(self) -> list[dict]:
+    def deserialize(self) -> List[Dict]:
         """
         Deserialize the scrap_output into a list of dictionaries.
         """
@@ -68,9 +68,9 @@ class CheckMiner(bt.Synapse):
 
     # Return response with tweet searched by url_hash
     # TODO: Add error handling for when check_output is None
-    check_output: typing.Optional[dict] = None
+    check_output: Optional[Dict] = None
 
-    def deserialize(self) -> dict:
+    def deserialize(self) -> Dict:
         """
         Deserialize the check_output into a dictionary.
         """

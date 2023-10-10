@@ -16,6 +16,7 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABI
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from typing import List, Dict
 
 from sqlalchemy import create_engine, Column, String, DateTime, Text, Boolean
 from sqlalchemy.orm import declarative_base
@@ -62,7 +63,7 @@ def store_data(twitterPost):
     Stores Twitter posts to the database.
 
     Args:
-        twitterPost (dict): The post data to store.
+        twitterPost (Dict): The post data to store.
 
     Returns:
         None
@@ -94,7 +95,7 @@ def fetch_latest_posts(n = 100):
         n (int): Number of latest posts to fetch.
 
     Returns:
-        list[dict]: List of N latest TwitterPost objects.
+        List[Dict]: List of N latest TwitterPost objects.
     """
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -124,7 +125,7 @@ def find_by_id(id):
         id (str): The id of the post to fetch.
 
     Returns:
-        dict: The TwitterPost object if found, else None.
+        dict (Dict): The TwitterPost object if found, else None.
     """
     Session = sessionmaker(bind=engine)
     session = Session()
