@@ -32,14 +32,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# am4ybwqi
+# ga3vulxa
 # GET request returning all the Twitter data from wandb
 @app.get("/twitter")
 def read_twitter_data(from_: Optional[int] = 0, limit: Optional[int] = 10):
     # Get the data from wandb, sort it by date, limit to 'limit' and return as array
     api = wandb.Api()
-    run = api.run("aureliojafer/scraping_subnet-neurons/g1ibv7db")
+    run = api.run("aureliojafer/scraping_subnet-neurons/am4ybwqi")
     historyData = run.history()
+    print(historyData)
     # Sort by date and limit to 'limit'
     sortedData = historyData.sort_values(by='created_at', ascending=False).iloc[from_:from_+limit]
     # Convert dataframe to array
@@ -51,7 +53,7 @@ def read_twitter_data(from_: Optional[int] = 0, limit: Optional[int] = 10):
 def read_twitter_data_length():
     # Get the data from wandb, sort it by date, limit to 'limit' and return as array
     api = wandb.Api()
-    run = api.run("aureliojafer/scraping_subnet-neurons/g1ibv7db")
+    run = api.run("aureliojafer/scraping_subnet-neurons/am4ybwqi")
     historyData = run.history()
     # Sort by date and limit to 'limit'
     dataArray = historyData.values
@@ -63,10 +65,10 @@ def read_twitter_data_length():
 def read_twitter_data(from_: Optional[int] = 0, limit: Optional[int] = 10):
     # Get the data from wandb, sort it by date, limit to 'limit' and return as array
     api = wandb.Api()
-    run = api.run("aureliojafer/scraping_subnet-neurons/w8937gls")
+    run = api.run("aureliojafer/scraping_subnet-neurons/ga3vulxa")
     historyData = run.history()
     # Sort by date and limit to 'limit'
-    sortedData = historyData.sort_values(by='created_utc', ascending=False).iloc[from_:from_+limit]
+    sortedData = historyData.sort_values(by='created_at', ascending=False).iloc[from_:from_+limit]
     print(sortedData)
     # Convert dataframe to array
     dataArray = sortedData.values
@@ -79,9 +81,20 @@ def read_twitter_data(from_: Optional[int] = 0, limit: Optional[int] = 10):
 def read_twitter_data_length():
     # Get the data from wandb, sort it by date, limit to 'limit' and return as array
     api = wandb.Api()
-    run = api.run("aureliojafer/scraping_subnet-neurons/w8937gls")
+    run = api.run("aureliojafer/scraping_subnet-neurons/ga3vulxa")
     historyData = run.history()
     # Sort by date and limit to 'limit'
     dataArray = historyData.values
     return len(dataArray)
+
+@app.get("/api/v1/getTwitterData")
+def getTwitterData():
+    api = wandb.Api()
+    run = api.run("aureliojafer/scraping_subnet-neurons/am4ybwqi")
+    historyData = run.history()
+    # Sort by date and limit to 'limit'
+    sortedData = historyData.sort_values(by='created_at', ascending=False)
+    # Convert dataframe to array
+    dataArray = sortedData.values
+    return dataArray.tolist()
 

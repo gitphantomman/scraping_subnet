@@ -29,7 +29,7 @@ import bittensor as bt
 import local_db.reddit_db as reddit_db
 import local_db.twitter_db as twitter_db
 import scraping
-
+from typing import Tuple
 # TODO: Check if all the necessary libraries are installed and up-to-date
 
 def get_config():
@@ -108,7 +108,7 @@ def main( config ):
 
     # Set up miner functionalities
     # The blacklist function decides if a request should be ignored.
-    def blacklist_fn( synapse: scraping.protocol.TwitterScrap ) -> bool:
+    def blacklist_twitter( synapse: scraping.protocol.TwitterScrap ) -> Tuple[bool, str]:
         """
         This function runs before the synapse data has been deserialized (i.e. before synapse.data is available).
         The synapse is instead contructed via the headers of the request. It is important to blacklist
@@ -118,17 +118,49 @@ def main( config ):
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
             # Ignore requests from unrecognized entities.
             bt.logging.trace(f'Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}')
-            return True
+            return True, ""
         # are not validators, or do not have enough stake. This can be checked via metagraph.S
         # and metagraph.validator_permit. You can always attain the uid of the sender via a
         # metagraph.hotkeys.index( synapse.dendrite.hotkey ) call.
         # Otherwise, allow the request to be processed further.
         bt.logging.trace(f'Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}')
-        return False
+        return False, ""
 
     # The priority function determines the order in which requests are handled.
     # More valuable or higher-priority requests are processed before others.
-    def priority_fn( synapse: scraping.protocol.TwitterScrap ) -> float:
+    def priority_twitter( synapse: scraping.protocol.TwitterScrap ) -> float:
+        """
+        Miners may recieve messages from multiple entities at once. This function
+        determines which request should be processed first. Higher values indicate
+        that the request should be processed first. Lower values indicate that the
+        request should be processed later.
+        Below: simple logic, prioritize requests from entities with more stake.
+        """
+        caller_uid = metagraph.hotkeys.index( synapse.dendrite.hotkey ) # Get the caller index.
+        prirority = float( metagraph.S[ caller_uid ] ) # Return the stake as the priority.
+        bt.logging.trace(f'Prioritizing {synapse.dendrite.hotkey} with value: ', prirority)
+        return prirority
+    def blacklist_reddit( synapse: scraping.protocol.RedditScrap ) -> Tuple[bool, str]:
+        """
+        This function runs before the synapse data has been deserialized (i.e. before synapse.data is available).
+        The synapse is instead contructed via the headers of the request. It is important to blacklist
+        requests before they are deserialized to avoid wasting resources on requests that will be ignored.
+        Below: Check that the hotkey is a registered entity in the metagraph.
+        """
+        if synapse.dendrite.hotkey not in metagraph.hotkeys:
+            # Ignore requests from unrecognized entities.
+            bt.logging.trace(f'Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}')
+            return True, ""
+        # are not validators, or do not have enough stake. This can be checked via metagraph.S
+        # and metagraph.validator_permit. You can always attain the uid of the sender via a
+        # metagraph.hotkeys.index( synapse.dendrite.hotkey ) call.
+        # Otherwise, allow the request to be processed further.
+        bt.logging.trace(f'Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}')
+        return False, ""
+
+    # The priority function determines the order in which requests are handled.
+    # More valuable or higher-priority requests are processed before others.
+    def priority_reddit( synapse: scraping.protocol.RedditScrap ) -> float:
         """
         Miners may recieve messages from multiple entities at once. This function
         determines which request should be processed first. Higher values indicate
@@ -141,24 +173,26 @@ def main( config ):
         bt.logging.trace(f'Prioritizing {synapse.dendrite.hotkey} with value: ', prirority)
         return prirority
 
-    async def check( synapse: scraping.protocol.CheckMiner) -> scraping.protocol.CheckMiner:
-        """
-        This function runs after the CheckMiner synapse has been deserialized.
-        """
-        bt.logging.info(f"url: {synapse.check_url_hash} \n" )
-        synapse.check_output = twitter_db.find_by_url_hash(synapse.check_url_hash)
-        bt.logging.info(f"check_output: {synapse.check_output}")
-
-        return synapse
-    
-    def scrap( synapse: scraping.protocol.TwitterScrap) -> scraping.protocol.TwitterScrap: 
+    def twitterScrap( synapse: scraping.protocol.TwitterScrap) -> scraping.protocol.TwitterScrap: 
         """
         This function runs after the TwitterScrap synapse has been deserialized (i.e. after synapse.data is available).
         This function runs after the blacklist and priority functions have been called.
         """
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
-        # Fetch latest posts from miner's local database.
-        fetched_data = twitter_db.fetch_latest_posts()
+        # Fetch latest N posts from miner's local database.
+        fetched_data = twitter_db.fetch_latest_posts(500)
+        synapse.scrap_output = fetched_data
+        bt.logging.info(f"number of response data: {len(synapse.scrap_output)} \n")
+        return synapse
+    
+    def redditScrap( synapse: scraping.protocol.RedditScrap) -> scraping.protocol.RedditScrap: 
+        """
+        This function runs after the RedditScrap synapse has been deserialized (i.e. after synapse.data is available).
+        This function runs after the blacklist and priority functions have been called.
+        """
+        bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
+        # Fetch latest N posts from miner's local database.
+        fetched_data = reddit_db.fetch_latest_posts(500)
         synapse.scrap_output = fetched_data
         bt.logging.info(f"number of response data: {len(synapse.scrap_output)} \n")
         return synapse
@@ -171,16 +205,15 @@ def main( config ):
 
     # Attach determiners which functions are called when servicing a request.
     bt.logging.info(f"Attaching forward function to axon.")
-    # ! enable blacklist, priority
-    axon.attach(
-        forward_fn = scrap,
-        # blacklist_fn = blacklist_fn,
-        # priority_fn = priority_fn,
+    axon.attach(forward_fn = redditScrap, blacklist_fn=blacklist_reddit, priority_fn=priority_reddit).attach(
+        forward_fn = twitterScrap,
+        blacklist_fn = blacklist_twitter,
+        priority_fn = priority_twitter,
     )
 
     # Serve passes the axon information to the network + netuid we are hosting on.
     # This will auto-update if the axon port of external ip have changed.
-    bt.logging.info(f"Serving axon {scrap} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}")
+    bt.logging.info(f"Serving axon {redditScrap, twitterScrap} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}")
     axon.serve( netuid = config.netuid, subtensor = subtensor )
 
     # Start  starts the miner's axon, making it active on the network.
@@ -218,7 +251,6 @@ def main( config ):
             bt.logging.error(traceback.format_exc())
             continue
 
-# TODO: Add error handling for when the miner cannot start or stop
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":

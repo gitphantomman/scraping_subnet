@@ -30,7 +30,7 @@ load_dotenv()
 bearer_token = os.getenv("BEARER_TOKEN")
 
 
-def scrapTwitter(max_limit = 50, key = "bittensor"):
+def scrapTwitter(max_limit = 100, key = "tao"):
     """
     Function to scrape recent tweets based on a keyword.
 
