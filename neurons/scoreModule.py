@@ -67,15 +67,12 @@ def redditScore( response, username='aureliojafer', project = 'scraping_subnet-n
                 filtered_data = history[history['id'] == post['id']]
                 print("filterd_data", filtered_data)
                 if filtered_data.empty or filtered_data is None:
-                    # TODO: check url_hash is correct
-                    # TODO: validator scrap that post with url and compare created_at
                     break
                 else:
                     exist_count += 1
                     filtered_data = filtered_data.iloc[0]
                     if filtered_data['created_at'] != post['created_at']:
                         wrong_count += 1
-        print(exist_count, wrong_count)
         # Calculate unique score and average time difference
         unique_score = (exist_count + 1) / min((len(response) + 1), 50)
         avg_time_diff = total_time_diff / min((len(response) + 1), 50)
@@ -136,8 +133,6 @@ def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-
                 filtered_data = history[history['id'] == post['id']]
                 print("filterd_data", filtered_data)
                 if filtered_data.empty or filtered_data is None:
-                    # TODO: check url_hash is correct
-                    # TODO: validator scrap that post with url and compare created_at
                     break
                 else:
                     exist_count += 1
@@ -176,7 +171,6 @@ def checkScore(responses):
     score = {}
     total_count = len(responses)
 
-    # TODO: Add error handling for empty responses
     for idx, response in enumerate(responses):
         if response in result:
             result[response].append(idx)

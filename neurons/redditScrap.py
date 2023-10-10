@@ -56,7 +56,6 @@ def scrape_reddit(subreddit_name='all', limit = 100):
     except Exception as e:
         print(f"Error occurred: {e}")
 # Function to continuously scrape reddit at a given interval
-# TODO: Add error handling for invalid interval values
 def continuous_scrape(interval=30):
     """Continuously scrape reddit at the given interval.
 
