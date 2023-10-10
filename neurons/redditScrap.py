@@ -30,7 +30,6 @@ load_dotenv()
 client_id = os.getenv("CLIENT_ID")
 
 # Create reddit instance with credentials from .env file
-# TODO: Add error handling for missing environment variables
 reddit = praw.Reddit(
     client_id = os.getenv("CLIENT_ID"),
     client_secret = os.getenv("CLIENT_SECRET"),
@@ -41,7 +40,6 @@ reddit = praw.Reddit(
 
 # Main scraping function from reddit
 # This function fetches new posts from a given subreddit
-# TODO: Add error handling for invalid subreddit names
 def scrape_reddit(subreddit_name='all', limit = 100):
     """Scrape the given subreddit and store the data.
 
@@ -49,12 +47,14 @@ def scrape_reddit(subreddit_name='all', limit = 100):
         subreddit_name (str): The name of the subreddit to scrape. Defaults to 'all'.
         limit (int): The number of posts to scrape. Defaults to 100.
     """
-    subreddit = reddit.subreddit(subreddit_name)
-    for submission in subreddit.new(limit=limit):
-        store_data(submission)
-    print("Remaining Requests:", reddit.auth.limits['remaining'])
-    print("Rate Limit Resets At:", reddit.auth.limits['reset_timestamp'])
-
+    try:
+        subreddit = reddit.subreddit(subreddit_name)
+        for submission in subreddit.new(limit=limit):
+            store_data(submission)
+        print("Remaining Requests:", reddit.auth.limits['remaining'])
+        print("Rate Limit Resets At:", reddit.auth.limits['reset_timestamp'])
+    except Exception as e:
+        print(f"Error occurred: {e}")
 # Function to continuously scrape reddit at a given interval
 # TODO: Add error handling for invalid interval values
 def continuous_scrape(interval=30):

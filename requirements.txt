@@ -1,7 +1,8 @@
-git+https://github.com/opentensor/bittensor.git@revolution
+git+https://github.com/opentensor/bittensor.git@master
 torch
 praw
 python-dotenv
 SQLAlchemy
 tweepy
 pandas
+wandb

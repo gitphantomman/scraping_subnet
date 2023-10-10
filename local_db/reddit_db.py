@@ -34,16 +34,16 @@ class RedditPost(Base):
         id (str): The id of the post
         title (str): The title of the post
         url (str): The url of the post
-        content (str): The content of the post
-        created_utc (DateTime): The creation time of the post
+        text (str): The text of the post
+        created_at (DateTime): The creation time of the post
         uploaded (bool): Whether the post has been uploaded or not
     """
     __tablename__ = 'reddit_posts'
     id = Column(String, primary_key=True)
     title = Column(String)
     url = Column(String)
-    content = Column(Text)
-    created_utc = Column(DateTime)
+    text = Column(Text)
+    created_at = Column(DateTime)
     uploaded = Column(Boolean, default = False)
     
 # TODO: Add error handling for database connection
@@ -71,10 +71,12 @@ def store_data(submission):
     Session = sessionmaker(bind = engine)
     session = Session()
     # Convert the creation time to a datetime object
-    dt_object = datetime.fromtimestamp(submission.created_utc)    
+    dt_object = datetime.fromtimestamp(submission.created_utc)   
+    if(submission.selftext == ""):
+        submission.selftext = submission.title 
     try:
         # Create a new post object and add it to the session
-        post = RedditPost(id = submission.id, title = submission.title, url = submission.url, content = submission.selftext, created_utc = dt_object)
+        post = RedditPost(id = submission.id, url = submission.url, title = submission.title, text = submission.selftext, created_at = dt_object)
         session.add(post)
         session.commit()
     
@@ -83,9 +85,9 @@ def store_data(submission):
     finally:
         session.close()
         
-def fetch_data(post_id=None):
+def fetch_data_by_id(post_id=None):
     """
-    Fetches Reddit posts from the database.
+    Fetches Reddit post by id from the database.
 
     Args:
         post_id (str, optional): The ID of a specific post to fetch. If None, fetches all posts. Defaults to None.
@@ -115,7 +117,7 @@ def fetch_data(post_id=None):
     finally:
         session.close()
 
-def fetch_latest_posts(n):
+def fetch_latest_posts(n = 100):
     """
     Fetches the latest N Reddit posts from the database based on their creation date.
 
@@ -131,11 +133,11 @@ def fetch_latest_posts(n):
     returnData = []
     try:
         # Fetch the latest N posts. (uploaded == false)
-        posts = session.query(RedditPost).order_by(RedditPost.created_utc.desc()).limit(n).all()
+        posts = session.query(RedditPost).order_by(RedditPost.created_at.desc()).limit(n).all()
         # Update uploaded field to True for the fetched posts. .filter(RedditPost.uploaded != True)
         for post in posts:
             post.uploaded = True
-            returnData.append({"id" : post.id, "title": post.title, "content": post.content, "url": post.url, "created_utc": post.created_utc, "type": "reddit"})
+            returnData.append({"id" : post.id, "title": post.title, "text": post.text, "url": post.url, "created_at": post.created_at, "type": "reddit"})
          # Commit the changes to the database.
         session.commit()
         return returnData

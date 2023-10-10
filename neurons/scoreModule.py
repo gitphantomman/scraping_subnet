@@ -23,58 +23,7 @@ import storeWB
 
 
 # Function to calculate score based on miner's response from Reddit
-def redditScore( response ):
-    """
-    This function calculates a score based on the response from Miner.
-    The score is calculated based on the time difference from the current time and the uniqueness of the response.
-
-    Args:
-        response (list): The response from Miner.
-
-    Returns:
-        float: The calculated score.
-    """
-    # Initialize variables
-    timeScore = 1
-    total_time_diff = 0
-    unique_score = 1
-    exist_count = 0
-
-    # Fetch historical data
-    history = storeWB.returnRedditdata()
-    history_ids = [item['id'] for item in history]
-
-    # TODO: Add error handling for empty response
-    if(response is not None):
-        # Calculate average time difference from current time
-        for post in response:
-            given_time = datetime.fromisoformat(post['created_utc'])
-            current_time = datetime.now()
-            time_diff = (current_time - given_time).total_seconds()
-            total_time_diff += time_diff
-
-            # Check if post already exists in history
-            if post['id'] in history_ids:
-                exist_count += 1
-
-        # Calculate unique score and average time difference
-        unique_score = exist_count / len(response)
-        avg_time_diff = total_time_diff / len(response)
-
-        # Calculate time score
-        if avg_time_diff < 864000 :
-            timeScore = avg_time_diff / 864000
-        else:
-            timeScore = 1.0
-
-        # Return score calculated by time score and unique score
-        return 1 - 0.15 * timeScore - 0.5 * unique_score
-    else:
-        return 0
-    
-
-# Function to calculate score based on miner's response from Twitter
-def twitterScore( response ):
+def redditScore( response, project = 'scraping_subnet-neurons', run_id = 'w8937gls' ):
     """
     This function calculates a score based on the response from Miner.
     The score is calculated based on the time difference from the current time and the uniqueness of the response.
@@ -92,15 +41,16 @@ def twitterScore( response ):
     total_time_diff = 0
     exist_count = 0
 
+    total_length = 0
     wrong_count = 0
     # Fetch historical data
-    history = storeWB.returnTwitterData()
-    history_ids = [item['url_hash'] for index, item in history.iterrows()]
+    history = storeWB.returnData(project=project, id=run_id)
 
     if response is not None and response != []:
+        total_length = len(response)
         # Choose 50 random posts from the response
-        if response.__len__() > 50:
-            response = response[:50]
+        if len(response) > 50:
+            response = random.sample(response, 50)
         
         # Calculate total time difference from current time and count of existing posts
         for post in response:
@@ -110,22 +60,26 @@ def twitterScore( response ):
             total_time_diff += (current_time - given_time).total_seconds()
             
             # Check if post already exists in history
-            filtered_data = history[history['url_hash'] == post['url_hash']]
-            if filtered_data.empty or filtered_data is None:
-                # TODO: check url_hash is correct
-                # TODO: validator scrap that post with url and compare created_at
-                continue
+            # Check if history is empty
+            if history.empty or history is None:
+                break
             else:
-                exist_count += 1
-                filtered_data = filtered_data.iloc[0]
-                if filtered_data['url'] == post['url'] and filtered_data['created_at'] == post['created_at']:
-                    wrong_count += 1
-
+                filtered_data = history[history['id'] == post['id']]
+                print("filterd_data", filtered_data)
+                if filtered_data.empty or filtered_data is None:
+                    # TODO: check url_hash is correct
+                    # TODO: validator scrap that post with url and compare created_at
+                    break
+                else:
+                    exist_count += 1
+                    filtered_data = filtered_data.iloc[0]
+                    if filtered_data['created_at'] != post['created_at']:
+                        wrong_count += 1
+        print(exist_count, wrong_count)
         # Calculate unique score and average time difference
-        # ! from here
-        unique_score = (exist_count + 1) / (len(response) + 1)
-        avg_time_diff = total_time_diff / (len(response) + 1)
-
+        unique_score = (exist_count + 1) / min((len(response) + 1), 50)
+        avg_time_diff = total_time_diff / min((len(response) + 1), 50)
+        wrong_score = wrong_count / min((len(response) + 1), 50)
         # Calculate time score
         if avg_time_diff < 864000 :
             timeScore = avg_time_diff / 864000
@@ -133,7 +87,76 @@ def twitterScore( response ):
             timeScore = 1.0
 
         # Return score calculated by time score and unique score
-        return 1 - 0.3 * timeScore - 0.5 * unique_score
+        return max(1 - 0.1 * timeScore - 0.3 * unique_score - 0.2 * wrong_score - min(0.2, 20 / total_length), 0)
+    else:
+        return 0
+    
+import random
+# Function to calculate score based on miner's response from Twitter
+def twitterScore( response , project = 'scraping_subnet-neurons', run_id = 'g1ibv7db'):
+    """
+    This function calculates a score based on the response from Miner.
+    The score is calculated based on the time difference from the current time and the uniqueness of the response.
+
+    Args:
+        response (list): The response from Miner.
+
+    Returns:
+        float: The calculated score.
+    """
+    # Initialize all variables
+    timeScore = 1
+    unique_score = 1
+
+    total_time_diff = 0
+    exist_count = 0
+    total_length = 0
+    wrong_count = 0
+    # Fetch historical data
+    history = storeWB.returnData(project=project, id=run_id)
+
+    if response is not None and response != []:
+        # Choose 50 random posts from the response
+        total_length = len(response)
+        if len(response) > 50:
+            response = random.sample(response, 50)
+        
+        # Calculate total time difference from current time and count of existing posts
+        for post in response:
+            # Calculate total time difference from current time
+            given_time = datetime.fromisoformat(post['created_at'])
+            current_time = datetime.now()
+            total_time_diff += (current_time - given_time).total_seconds()
+            
+            # Check if post already exists in history
+            # Check if history is empty
+            if history.empty or history is None:
+                break
+            else: 
+                filtered_data = history[history['id'] == post['id']]
+                print("filterd_data", filtered_data)
+                if filtered_data.empty or filtered_data is None:
+                    # TODO: check url_hash is correct
+                    # TODO: validator scrap that post with url and compare created_at
+                    break
+                else:
+                    exist_count += 1
+                    filtered_data = filtered_data.iloc[0]
+                    if filtered_data['created_at'] != post['created_at']:
+                        wrong_count += 1
+        print(exist_count, wrong_count)
+        # Calculate unique score and average time difference
+        unique_score = (exist_count + 1) / min((len(response) + 1), 50)
+        avg_time_diff = total_time_diff / min((len(response) + 1), 50)
+        wrong_score = wrong_count / min((len(response) + 1), 50)
+        # Calculate time score
+        if avg_time_diff < 864000 :
+            timeScore = avg_time_diff / 864000
+        else:
+            timeScore = 1.0
+
+        # Return score calculated by time score and unique score
+        return max(1 - 0.1 * timeScore - 0.3 * unique_score - 0.2 * wrong_score - min(0.2, 20 / total_length), 0)
     else:
         return 0
     

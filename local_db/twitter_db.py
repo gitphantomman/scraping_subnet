@@ -18,7 +18,6 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from sqlalchemy import create_engine, Column, String, DateTime, Text, Boolean
-# from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import  sessionmaker
 from datetime import datetime
@@ -41,23 +40,24 @@ class TwitterPost(Base):
         uploaded (Boolean): Flag to check if the post has been uploaded or not
     """
     __tablename__ = 'twitter_posts'
-    url_hash = Column(String, primary_key=True)
-    id = Column(String)
+    # url_hash = Column(String, primary_key=True)
+    id = Column(String, primary_key=True)
     url = Column(String)
     text = Column(Text)
     created_at = Column(DateTime)
     uploaded = Column(Boolean, default = False)
 
 # Create a SQLite engine for the database
-engine = create_engine('sqlite:///./twitter_data.db')
+
+engine = create_engine('sqlite:///twitter_data.db')
 
 # Create all tables in the engine
 Base.metadata.create_all(engine)
 
-# TODO: Check if the following functions are required in the current context
 __all__ = ["TwitterPost", "store_data", "fetch_latest_posts"]
 
 def store_data(twitterPost):
+    print(twitterPost)
     """
     Stores Twitter posts to the database.
 
@@ -72,22 +72,21 @@ def store_data(twitterPost):
     try:
         hash_object = hashlib.sha256()
         # Generate url from twitter post id
-        url = f"https://twitter.com/iamthecosmos888/status/{twitterPost['id']}"
-        hash_object.update(url.encode())
-        # Generate hash from url (primary key)
-        hex_dig = hash_object.hexdigest()
+        url = f"https://twitter.com/abcd/status/{twitterPost['id']}"
+        # hash_object.update(url.encode())
+        # Generate hash from url for primary key
+        # hex_dig = hash_object.hexdigest()
         dt_object = datetime.strptime(twitterPost['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")  
-        post = TwitterPost(id = twitterPost['id'], text = twitterPost['text'], url = url, url_hash = hex_dig, created_at = dt_object)
+        post = TwitterPost(id = twitterPost['id'], text = twitterPost['text'], url = url, created_at = dt_object)
         # Add and commit
         session.add(post)
         session.commit()
-    # TODO: Add specific exceptions for better error handling
     except Exception as e:
         print(f"Error while storing data: {e}")
     finally:
         session.close()
 
-def fetch_latest_posts(n = None):
+def fetch_latest_posts(n = 100):
     """
     Fetches the latest N Twitter posts from the database based on their creation date.
 
@@ -101,18 +100,14 @@ def fetch_latest_posts(n = None):
     session = Session()
     returnData = []
     try:
-        # Fetch the latest N posts. (uploaded == false)
-        if n is None:
-            posts = session.query(TwitterPost).filter(TwitterPost.uploaded != True).order_by(TwitterPost.created_at.desc()).all()
-        else:
-            posts = session.query(TwitterPost).filter(TwitterPost.uploaded != True).order_by(TwitterPost.created_at.desc()).limit(n).all()
+        # Fetch the latest N posts. (uploaded == false) .filter(TwitterPost.uploaded != True)
+        
+        posts = session.query(TwitterPost).order_by(TwitterPost.created_at.desc()).limit(n).all()
         # Filter out even rows to only keep odd rows
-        posts = posts[::2]
-        print(f"half posts{posts}")
         # Update uploaded field to True for the fetched posts. .filter(TwitterPost.uploaded != True)
         for post in posts:
             post.uploaded = True
-            returnData.append({"id" : post.id, "text": post.text, "url": post.url, "url_hash": post.url_hash, "created_at": post.created_at, "type": "twitter"})
+            returnData.append({"id" : post.id, "text": post.text, "created_at": post.created_at, "url": post.url, "type": "twitter"})
         # Commit the changes to the database.
         session.commit()
         return returnData
@@ -121,12 +116,12 @@ def fetch_latest_posts(n = None):
         return []
     finally:
         session.close()
-def find_by_url_hash(url_hash):
+def find_by_id(id):
     """
     Fetches the Twitter post from the database based on the URL hash.
 
     Args:
-        url_hash (str): The hash of the post url to fetch.
+        id (str): The id of the post to fetch.
 
     Returns:
         dict: The TwitterPost object if found, else None.
@@ -135,13 +130,14 @@ def find_by_url_hash(url_hash):
     session = Session()
     try:
         # Query the database for a post with the given url_hash
-        post = session.query(TwitterPost).filter_by(url_hash=url_hash).first()
-        return {"id" : post.id, "url": post.url, "url_hash": post.url_hash, "text": post.text, "created_at": post.created_at}
+        post = session.query(TwitterPost).filter_by(id=id).first()
+        return {"id" : post.id, "text": post.text, "url": post.url, "created_at": post.created_at}
     except Exception as e:
         print(f"Error while fetching data by URL: {e}")
         return None
     finally:
         session.close()
+
 
 # Make uploaded column of all the rows in twitter_data.db False
 def reset_uploaded():
