@@ -266,7 +266,7 @@ def main( config ):
 
                 
                 
-            if (step + 1) % 12 == 0:
+            if (step + 1) % 20 == 0:
                 # Adjust the scores based on responses from miners.
                 # weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 weights = scores / torch.sum(scores)
