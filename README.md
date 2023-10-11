@@ -129,14 +129,7 @@ The validator issues queries to miners for data, compute scores for the provided
     wandb login
     ```
 3. You have to create a project in wandb. You can use the `scraping_subnet` project as a template.
-4. You need to create two runs in the project for twitter data storage and reddit data storage using below script.
 
-    ```bash
-    cd neurons
-    python makeWandb.py
-    ```
-    It prints run id. You have to set this run id when you run the validator.
-    Actually you need two run_id for now, so you should run this script twice.
 
 ## Running Validator Script
 
@@ -150,8 +143,6 @@ python validator.py
     --wallet.hotkey <your validator hotkey> # hotkey name of your wallet
     --wandb.username <your wandb username> # your wandb username
     --wandb.project <your wandb project name> # the wandb project name you want to save to (Default: zhjgapym)
-    --wandb.twitter_run_id <your wandb twitter run id> # the wandb run name you want to save twitter data to (Default: am4ybwqi)
-    --wandb.reddit_run_id <your wandb reddit run id> # the wandb run name you want to save reddit data to (Default: ga3vulxa) 
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
 ```
 
