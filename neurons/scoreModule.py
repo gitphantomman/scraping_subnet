@@ -44,7 +44,7 @@ def redditScore( response, username='aureliojafer', project = 'scraping_subnet-n
     total_length = 0
     wrong_count = 0
     # Fetch historical data
-    history = storeWB.returnAllProjectData(username=username, project=project)
+    historyData = storeWB.returnAllProjectData(username=username, project=project)
 
     if response is not None and response != []:
         total_length = len(response)
@@ -55,24 +55,32 @@ def redditScore( response, username='aureliojafer', project = 'scraping_subnet-n
         # Calculate total time difference from current time and count of existing posts
         for post in response:
             # Calculate total time difference from current time
-            given_time = datetime.fromisoformat(post['created_at'])
-            current_time = datetime.now()
-            total_time_diff += (current_time - given_time).total_seconds()
-            
-            # Check if post already exists in history
-            # Check if history is empty
-            if history.empty or history is None:
-                break
-            else:
-                filtered_data = history[history['id'] == post['id']]
-                print("filterd_data", filtered_data)
-                if filtered_data.empty or filtered_data is None:
+            try:
+
+                given_time = datetime.fromisoformat(post['created_at'])
+                current_time = datetime.now()
+                total_time_diff += (current_time - given_time).total_seconds()
+                
+                # Check if post already exists in history
+                # Check if history is empty
+                if historyData is [] or historyData is None:
                     break
-                else:
-                    exist_count += 1
-                    filtered_data = filtered_data.iloc[0]
-                    if filtered_data['created_at'] != post['created_at']:
-                        wrong_count += 1
+                else: 
+                    filtered_data = None
+                    for history in historyData:
+                        if history is None or history.empty:
+                            continue
+                        filtered_data = history[history['id'] == post['id']]
+                    print("filterd_data", filtered_data)
+                    if filtered_data.empty or filtered_data is None:
+                        break
+                    else:
+                        exist_count += 1
+                        filtered_data = filtered_data.iloc[0]
+                        if filtered_data['created_at'] != post['created_at']:
+                            wrong_count += 1
+            except:
+                continue
         # Calculate unique score and average time difference
         unique_score = (exist_count + 1) / min((len(response) + 1), 50)
         avg_time_diff = total_time_diff / min((len(response) + 1), 50)
@@ -111,8 +119,9 @@ def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-
     wrong_count = 0
     # Fetch historical data
 
-    history = storeWB.returnAllProjectData(username= username, project=project)
+    historyData = storeWB.returnAllProjectData(username= username, project=project)
 
+    
     if response is not None and response != []:
         # Choose 50 random posts from the response
         total_length = len(response)
@@ -122,25 +131,31 @@ def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-
         # Calculate total time difference from current time and count of existing posts
         for post in response:
             # Calculate total time difference from current time
-            given_time = datetime.fromisoformat(post['created_at'])
-            current_time = datetime.now()
-            total_time_diff += (current_time - given_time).total_seconds()
-            
-            # Check if post already exists in history
-            # Check if history is empty
-            if history.empty or history is None:
-                break
-            else: 
-                filtered_data = history[history['id'] == post['id']]
-                print("filterd_data", filtered_data)
-                if filtered_data.empty or filtered_data is None:
+            try:
+
+                given_time = datetime.fromisoformat(post['created_at'])
+                current_time = datetime.now()
+                total_time_diff += (current_time - given_time).total_seconds()
+                
+                # Check if post already exists in history
+                # Check if history is empty
+                if historyData is [] or historyData is None:
                     break
-                else:
-                    exist_count += 1
-                    filtered_data = filtered_data.iloc[0]
-                    if filtered_data['created_at'] != post['created_at']:
-                        wrong_count += 1
-        print(exist_count, wrong_count)
+                else: 
+                    filtered_data = None
+                    for history in historyData:
+                        if history is None or history.empty:
+                            continue
+                        filtered_data = history[history['id'] == post['id']]
+                    if filtered_data.empty or filtered_data is None:
+                        break
+                    else:
+                        exist_count += 1
+                        filtered_data = filtered_data.iloc[0]
+                        if filtered_data['created_at'] != post['created_at']:
+                            wrong_count += 1
+            except:
+                continue
         # Calculate unique score and average time difference
         unique_score = (exist_count + 1) / min((len(response) + 1), 50)
         avg_time_diff = total_time_diff / min((len(response) + 1), 50)

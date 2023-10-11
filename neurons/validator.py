@@ -41,8 +41,6 @@ def get_config():
     # TODO: Validate the wandb run id and project name
     # Adds wandb arguments for storing
     parser.add_argument('--wandb.username', default = 'aureliojafer', help = 'Adds a wandb username to store data')
-    parser.add_argument('--wandb.twitter_run_id', default = 'g1ibv7db', help = 'Adds a wandb run id to store twitter scraping data')
-    parser.add_argument('--wandb.reddit_run_id', default = 'w8937gls', help = 'Adds a wandb run id to store reddit scraping data')
     parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
     
     # Adds override arguments for network and netuid.
@@ -133,18 +131,24 @@ def main( config ):
     alpha = 0.9
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
     bt.logging.info(f"initalScores:{scores}")
-    cur_block = subtensor.block
+    curr_block = subtensor.block
     # scores = scores * metagraph.last_update > cur_block - 10
+    # scores = scores * metagraph.last_update > curr_block - 600
     bt.logging.info(f"Scores after last update:{scores}")
+    
     scores = scores * (metagraph.total_stake < 1.024e3)
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
     step = 0
     
+    
+
     bt.logging.info(f"Weights: {scores}")
     bt.logging.info("Starting validator loop.")
     
     total_dendrites_per_query = 25
     minimum_dendrites_per_query = 3
+    last_updated_block = curr_block - (curr_block % 100)
+    last_reset_weights_block = curr_block
     # Main loop
     while True:
         # Per 10 blocks, sync the subtensor state with the blockchain.
@@ -196,7 +200,7 @@ def main( config ):
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             bt.logging.info(f"filtered_axons: {filtered_axons}")
             # Broadcast a GET_DATA query to filtered miners on the network.
-            if (step + 1) % 2 == 1:
+            if (step + 1) % 2 == 0:
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
@@ -230,8 +234,48 @@ def main( config ):
                     store_Twitter_wandb(responses, config.wandb.username, config.wandb.project)
                 else:
                     print("No data found")
+                    
+                current_block = subtensor.block
+                print(current_block - last_updated_block)
+                if current_block - last_updated_block > 100:
+                    
+                    weights = scores / torch.sum(scores)
+                    bt.logging.info(f"Setting weights: {weights}")
+                    # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
+                    (
+                        processed_uids,
+                        processed_weights,
+                    ) = bt.utils.weight_utils.process_weights_for_netuid(
+                        uids=metagraph.uids,
+                        weights=weights,
+                        netuid=config.netuid,
+                        subtensor=subtensor
+                    )
+                    bt.logging.info(f"Processed weights: {processed_weights}")
+                    bt.logging.info(f"Processed uids: {processed_uids}")
+                    result = subtensor.set_weights(
+                        netuid = config.netuid, # Subnet to set weights on.
+                        wallet = wallet, # Wallet to sign set weights using hotkey.
+                        uids = processed_uids, # Uids of the miners to set weights for.
+                        weights = processed_weights, # Weights to set for the miners.
+                        wait_for_inclusion = True
+                    )
+                    if result: bt.logging.success('Successfully set weights.')
+                    else: bt.logging.error('Failed to set weights.')
+                if last_reset_weights_block + 1800 < current_block:
+
+                    bt.logging.trace(f"Resetting weights")
+                    scores = torch.ones_like( metagraph.uids , dtype = torch.float32 )
+                    last_reset_weights_block = current_block
+                    # scores = scores * metagraph.last_update > current_block - 600
+
+                    # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
+                    scores = scores * (metagraph.total_stake < 1.024e3) 
+
+                    # set all nodes without ips set to 0
+                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in meta.uids])
             # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 2 == 0:
+            if (step + 1) % 2 == 1:
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
@@ -268,33 +312,48 @@ def main( config ):
 
                 
                 
-            if (step + 1) % 20 == 0:
+                # If the metagraph has changed, update the weights.
                 # Adjust the scores based on responses from miners.
                 # weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
-                weights = scores / torch.sum(scores)
-                bt.logging.info(f"Setting weights: {weights}")
-                # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
-                (
-                    processed_uids,
-                    processed_weights,
-                ) = bt.utils.weight_utils.process_weights_for_netuid(
-                    uids=metagraph.uids,
-                    weights=weights,
-                    netuid=config.netuid,
-                    subtensor=subtensor
-                )
-                bt.logging.info(f"Processed weights: {processed_weights}")
-                bt.logging.info(f"Processed uids: {processed_uids}")
-                result = subtensor.set_weights(
-                    netuid = config.netuid, # Subnet to set weights on.
-                    wallet = wallet, # Wallet to sign set weights using hotkey.
-                    uids = processed_uids, # Uids of the miners to set weights for.
-                    weights = processed_weights, # Weights to set for the miners.
-                    wait_for_inclusion = True
-                )
-                if result: bt.logging.success('Successfully set weights.')
-                else: bt.logging.error('Failed to set weights.')
+                current_block = subtensor.block
+                print(current_block - last_updated_block)
+                if current_block - last_updated_block > 100:
+                    
+                    weights = scores / torch.sum(scores)
+                    bt.logging.info(f"Setting weights: {weights}")
+                    # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
+                    (
+                        processed_uids,
+                        processed_weights,
+                    ) = bt.utils.weight_utils.process_weights_for_netuid(
+                        uids=metagraph.uids,
+                        weights=weights,
+                        netuid=config.netuid,
+                        subtensor=subtensor
+                    )
+                    bt.logging.info(f"Processed weights: {processed_weights}")
+                    bt.logging.info(f"Processed uids: {processed_uids}")
+                    result = subtensor.set_weights(
+                        netuid = config.netuid, # Subnet to set weights on.
+                        wallet = wallet, # Wallet to sign set weights using hotkey.
+                        uids = processed_uids, # Uids of the miners to set weights for.
+                        weights = processed_weights, # Weights to set for the miners.
+                        wait_for_inclusion = True
+                    )
+                    if result: bt.logging.success('Successfully set weights.')
+                    else: bt.logging.error('Failed to set weights.')
+                if last_reset_weights_block + 1800 < current_block:
 
+                    bt.logging.trace(f"Resetting weights")
+                    scores = torch.ones_like( metagraph.uids , dtype = torch.float32 )
+                    last_reset_weights_block = current_block
+                    # scores = scores * metagraph.last_update > current_block - 600
+
+                    # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
+                    scores = scores * (metagraph.total_stake < 1.024e3) 
+
+                    # set all nodes without ips set to 0
+                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in meta.uids])
             step += 1
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
