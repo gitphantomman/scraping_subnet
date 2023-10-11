@@ -23,7 +23,7 @@ import csv
 import pandas as pd
 
 # Function to store all responses from all miners to wandb
-def store_reddit(all_data, username, projectName, run_id):
+def store_reddit(all_data, username, projectName):
     """
     This function stores all responses from all miners to wandb.
 
@@ -34,12 +34,18 @@ def store_reddit(all_data, username, projectName, run_id):
     """
 
     # Initialize wandb run
-    run = wandb.init(project = projectName,  resume="allow",  id = run_id)
+    # run = wandb.init(project = projectName,  resume="allow",  id = run_id)
 
-    # Collect registered post ids
-    historyData= returnData(username = username, project = projectName, id = run_id)
+    # # Collect registered post ids
+    # historyData= returnData(username = username, project = projectName, id = run_id)
     
-   
+    api = wandb.Api()
+    runs = api.runs(f"{username}/{projectName}")
+    historyData = []
+    run = wandb.init(project = projectName,  resume="allow")
+    for eachrun in runs:
+        run_data = returnData(username = username, project = projectName, id = eachrun.id)
+        historyData.append(run_data)
     
     # Iterate over all data
     for data in all_data:
@@ -72,7 +78,7 @@ def store_reddit(all_data, username, projectName, run_id):
     run.finish()
 
 # Function to store all responses from all miners to wandb for Twitter data
-def store_twitter(all_data,username, projectName, run_id):
+def store_twitter(all_data,username, projectName):
     """
     This function stores all responses from all miners to wandb for Twitter data.
 
@@ -83,10 +89,17 @@ def store_twitter(all_data,username, projectName, run_id):
     """
 
     # Initialize wandb run
-    run = wandb.init(project = projectName, resume="allow", id = run_id)
+    # run = wandb.init(project = projectName, resume="allow", id = run_id)
 
-    # Collect registered post ids
-    historyData= returnData(username = username, project = projectName, id = run_id)
+    # # Collect registered post ids
+    # historyData= returnData(username = username, project = projectName, id = run_id)
+    api = wandb.Api()
+    runs = api.runs(f"{username}/{projectName}")
+    historyData = []
+    run = wandb.init(project = projectName,  resume="allow")
+    for eachrun in runs:
+        run_data = returnData(username = username, project = projectName, id = eachrun.id)
+        historyData.append(run_data)
     
     # history_ids = []
     # for index, item in historyData.iterrows():
@@ -141,5 +154,24 @@ def returnData(username, project, id):
     api = wandb.Api()
     run = api.run(f"{username}/{project}/{id}")
     historyData = run.history()
+    return historyData
+# Function to return all data in wandb project
+def returnAllProjectData(username, project):
+    """
+    This function returns all data in wandb project.
+
+    Args:
+        project (str): The name of the project. Defaults to "scraping_subnet-neurons".
+        id (str): The id of the run. Defaults to "g1ibv7db".
+
+    Returns:
+        DataFrame: The DataFrame of the history data.
+    """
+    api = wandb.Api()
+    runs = api.runs(f"{username}/{project}")
+    historyData = []
+    for eachrun in runs:
+        run_data = returnData(username = username, project = project, id = eachrun.id)
+        historyData.append(run_data)
     return historyData
 

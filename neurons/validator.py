@@ -74,18 +74,18 @@ def get_config():
     return config
 
 # Wandb: append data to reddit dataset
-def store_Reddit_wandb(all_data, username, projectName, runid):
+def store_Reddit_wandb(all_data, username, projectName):
     """
     This function stores all data from reddit to wandb.
     """
-    storeWB.store_reddit(all_data = all_data, username= username, projectName = projectName, run_id = runid)
+    storeWB.store_reddit(all_data = all_data, username= username, projectName = projectName)
 
 # Wandb: append data to twitter dataset
-def store_Twitter_wandb(all_data, username, projectName, runid):
+def store_Twitter_wandb(all_data, username, projectName):
     """
     This function stores all data from twitter to wandb.
     """
-    storeWB.store_twitter(all_data = all_data, username= username, projectName = projectName, run_id = runid)
+    storeWB.store_twitter(all_data = all_data, username= username, projectName = projectName)
 
 import random
 
@@ -215,7 +215,7 @@ def main( config ):
                     # If the miner did not respond, set its score to 0.
                     if resp_i != None:
                         # Evaluate how is the miner's performance.
-                        score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = config.wandb.twitter_run_id)
+                        score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project)
                         # Update the global score of the miner.
                         # This score contributes to the miner's weight in the network.
                         # A higher weight means that the miner has been consistently responding correctly.
@@ -227,7 +227,7 @@ def main( config ):
                 
                 if len(responses) > 0:
                     # store data into wandb
-                    store_Twitter_wandb(responses, config.wandb.username, config.wandb.project, config.wandb.twitter_run_id)
+                    store_Twitter_wandb(responses, config.wandb.username, config.wandb.project)
                 else:
                     print("No data found")
             # Periodically update the weights on the Bittensor blockchain.
@@ -250,7 +250,7 @@ def main( config ):
                     # If the miner did not respond, set its score to 0.
                     if resp_i != None:
                         # Evaluate how is the miner's performance.
-                        score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = config.wandb.reddit_run_id)
+                        score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project)
                         # Update the global score of the miner.
                         # This score contributes to the miner's weight in the network.
                         # A higher weight means that the miner has been consistently responding correctly.
@@ -262,7 +262,7 @@ def main( config ):
                 
                 if len(responses) > 0:
                     # store data into wandb
-                    store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, config.wandb.reddit_run_id)
+                    store_Reddit_wandb(responses, config.wandb.username, config.wandb.project)
                 else:
                     print("No data found")
 
