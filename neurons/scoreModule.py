@@ -23,7 +23,7 @@ import storeWB
 
 
 # Function to calculate score based on miner's response from Reddit
-def redditScore( response, username='aureliojafer', project = 'scraping_subnet-neurons'):
+def redditScore( response, username='aureliojafer', project = 'scraping_subnet-neurons', run_id = 'hvs7wdk8' ):
     """
     This function calculates a score based on the response from Miner.
     The score is calculated based on the time difference from the current time and the uniqueness of the response.
@@ -44,7 +44,7 @@ def redditScore( response, username='aureliojafer', project = 'scraping_subnet-n
     total_length = 0
     wrong_count = 0
     # Fetch historical data
-    historyData = storeWB.returnAllProjectData(username=username, project=project)
+    history = storeWB.returnData(username=username, project=project, id=run_id)
 
     if response is not None and response != []:
         total_length = len(response)
@@ -63,15 +63,10 @@ def redditScore( response, username='aureliojafer', project = 'scraping_subnet-n
                 
                 # Check if post already exists in history
                 # Check if history is empty
-                if historyData is [] or historyData is None:
+                if history.empty or history is None:
                     break
-                else: 
-                    filtered_data = None
-                    for history in historyData:
-                        if history is None or history.empty:
-                            continue
-                        filtered_data = history[history['id'] == post['id']]
-                    print("filterd_data", filtered_data)
+                else:
+                    filtered_data = history[history['id'] == post['id']]
                     if filtered_data.empty or filtered_data is None:
                         break
                     else:
@@ -98,7 +93,7 @@ def redditScore( response, username='aureliojafer', project = 'scraping_subnet-n
     
 import random
 # Function to calculate score based on miner's response from Twitter
-def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-neurons'):
+def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-neurons', run_id = 'hvs7wdk8'):
     """
     This function calculates a score based on the response from Miner.
     The score is calculated based on the time difference from the current time and the uniqueness of the response.
@@ -119,7 +114,7 @@ def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-
     wrong_count = 0
     # Fetch historical data
 
-    historyData = storeWB.returnAllProjectData(username= username, project=project)
+    history = storeWB.returnData(username= username, project=project, id=run_id)
 
     
     if response is not None and response != []:
@@ -139,14 +134,10 @@ def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-
                 
                 # Check if post already exists in history
                 # Check if history is empty
-                if historyData is [] or historyData is None:
+                if history.empty or history is None:
                     break
-                else: 
-                    filtered_data = None
-                    for history in historyData:
-                        if history is None or history.empty:
-                            continue
-                        filtered_data = history[history['id'] == post['id']]
+                else:
+                    filtered_data = history[history['id'] == post['id']]
                     if filtered_data.empty or filtered_data is None:
                         break
                     else:
