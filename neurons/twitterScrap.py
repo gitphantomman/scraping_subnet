@@ -17,20 +17,23 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE S
 DEALINGS IN THE SOFTWARE.
 """
 
-
 import os
+import random
 from dotenv import load_dotenv
+from os.path import exists
 import time
 import requests
 
 from local_db.twitter_db import store_data
+from os.path import exists
+
 load_dotenv()
 
 # Get bearer token from environment variables
 bearer_token = os.getenv("BEARER_TOKEN")
 
 
-def scrapTwitter(max_limit = 100, key = "tao"):
+def scrapTwitter(max_limit=100, key="tao"):
     """
     Function to scrape recent tweets based on a keyword.
 
@@ -41,12 +44,13 @@ def scrapTwitter(max_limit = 100, key = "tao"):
     Returns:
         None
     """
+    print(f"Scraping twitter for keyword: {key}, max items: {max_limit}")
     # Construct the URL for the Twitter API
     url = f"https://api.twitter.com/2/tweets/search/recent?query={key}&tweet.fields=created_at&max_results={max_limit}"
     payload = {}
     headers = {
         'Authorization': f'Bearer {bearer_token}',
-        }
+    }
     try:
         # Send a GET request to the Twitter API
         response = requests.request("GET", url, headers=headers, data=payload)
@@ -62,6 +66,15 @@ def scrapTwitter(max_limit = 100, key = "tao"):
     except Exception as e:
         print('Invalid Key')
 
+
+def random_line(afile="keywords.txt"):
+    if not exists(afile):
+        print(f"Keyword file not found at location: {afile}")
+        quit()
+    lines = open(afile).read().splitlines()
+    return random.choice(lines)
+
+
 def continuous_scrape(interval=16):
     """
     Function to continuously scrape tweets at a specified interval.
@@ -74,21 +87,17 @@ def continuous_scrape(interval=16):
     """
     while True:
         try:
+            randomKey = random_line()
             # Scrape tweets
-            scrapTwitter()
+            scrapTwitter(key=randomKey)
             print("Scraping done. Waiting for the next round...")
             # Wait for the specified interval before the next round
             time.sleep(interval)
         except Exception as e:
             print(f"Error occurred: {e}")
-            time.sleep(16) # Wait for 30s before trying again
+            time.sleep(16)  # Wait for 30s before trying again
+
 
 if __name__ == "__main__":
     # Start the continuous scraping when the script is run directly
     continuous_scrape()
-
-
-
-
-
-
