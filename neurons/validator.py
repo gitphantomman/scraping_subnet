@@ -29,7 +29,8 @@ import bittensor as bt
 import storeWB
 import scoreModule
 import scraping
-
+import json
+import wandb
 
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
@@ -72,18 +73,18 @@ def get_config():
     return config
 
 # Wandb: append data to reddit dataset
-def store_Reddit_wandb(all_data, username, projectName):
+def store_Reddit_wandb(all_data, username, projectName, run_id):
     """
     This function stores all data from reddit to wandb.
     """
-    storeWB.store_reddit(all_data = all_data, username= username, projectName = projectName)
+    storeWB.store_reddit(all_data = all_data, username= username, projectName = projectName, run_id = run_id)
 
 # Wandb: append data to twitter dataset
-def store_Twitter_wandb(all_data, username, projectName):
+def store_Twitter_wandb(all_data, username, projectName, run_id):
     """
     This function stores all data from twitter to wandb.
     """
-    storeWB.store_twitter(all_data = all_data, username= username, projectName = projectName)
+    storeWB.store_twitter(all_data = all_data, username= username, projectName = projectName, run_id = run_id)
 
 import random
 
@@ -149,11 +150,38 @@ def main( config ):
     minimum_dendrites_per_query = 3
     last_updated_block = curr_block - (curr_block % 100)
     last_reset_weights_block = curr_block
+
+    # wandb init
+
+    wandb_params = {}
+
+    if os.path.exists('wandb_config.json'):
+        with open('wandb_config.json', 'r') as f:
+            wandb_params = json.load(f)
+    else:
+        with open('wandb_config.json', 'w') as f:
+            # Create a new project on wandb and add the project name and username to the config file.
+            wandb_params['username'] = config.wandb.username
+            wandb_params['project'] = config.wandb.project
+            
+
+            # Create a new wandb run to continuously append data to the back.
+            twitter_run = wandb.init(project = config.wandb.project, resume="allow", name = "twitter")
+            wandb_params['twitter'] = twitter_run.id
+            twitter_run.finish()
+            reddit_run = wandb.init(project= config.wandb.project, resume="allow", name = "reddit")
+            wandb_params['reddit'] = reddit_run.id
+            reddit_run.finish()
+            json.dump(wandb_params, f)
+    bt.logging.info(f"wandb_params:{wandb_params}")
+    
+
     # Main loop
     while True:
         # Per 10 blocks, sync the subtensor state with the blockchain.
-        if subtensor.block % 10 == 0:
+        if step % 5 == 0:
             metagraph.sync(subtensor = subtensor)
+            bt.logging.info(f"Syncing metagraph with subtensor.")
 
         # If the metagraph has changed, update the weights.
         # Get the uids of all miners in the network.
@@ -219,7 +247,7 @@ def main( config ):
                     # If the miner did not respond, set its score to 0.
                     if resp_i != None:
                         # Evaluate how is the miner's performance.
-                        score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project)
+                        score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['twitter'])
                         # Update the global score of the miner.
                         # This score contributes to the miner's weight in the network.
                         # A higher weight means that the miner has been consistently responding correctly.
@@ -231,7 +259,7 @@ def main( config ):
                 
                 if len(responses) > 0:
                     # store data into wandb
-                    store_Twitter_wandb(responses, config.wandb.username, config.wandb.project)
+                    store_Twitter_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['twitter'])
                 else:
                     print("No data found")
                     
@@ -260,6 +288,7 @@ def main( config ):
                         weights = processed_weights, # Weights to set for the miners.
                         wait_for_inclusion = True
                     )
+                    last_updated_block = current_block
                     if result: bt.logging.success('Successfully set weights.')
                     else: bt.logging.error('Failed to set weights.')
                 if last_reset_weights_block + 1800 < current_block:
@@ -273,7 +302,7 @@ def main( config ):
                     scores = scores * (metagraph.total_stake < 1.024e3) 
 
                     # set all nodes without ips set to 0
-                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in meta.uids])
+                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             # Periodically update the weights on the Bittensor blockchain.
             if (step + 1) % 2 == 1:
                 responses = dendrite.query(
@@ -294,7 +323,7 @@ def main( config ):
                     # If the miner did not respond, set its score to 0.
                     if resp_i != None:
                         # Evaluate how is the miner's performance.
-                        score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project)
+                        score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['reddit'])
                         # Update the global score of the miner.
                         # This score contributes to the miner's weight in the network.
                         # A higher weight means that the miner has been consistently responding correctly.
@@ -306,7 +335,7 @@ def main( config ):
                 
                 if len(responses) > 0:
                     # store data into wandb
-                    store_Reddit_wandb(responses, config.wandb.username, config.wandb.project)
+                    store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['reddit'])
                 else:
                     print("No data found")
 

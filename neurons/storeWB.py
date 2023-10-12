@@ -23,7 +23,7 @@ import csv
 import pandas as pd
 
 # Function to store all responses from all miners to wandb
-def store_reddit(all_data, username, projectName):
+def store_reddit(all_data, username, projectName, run_id):
     """
     This function stores all responses from all miners to wandb.
 
@@ -34,26 +34,19 @@ def store_reddit(all_data, username, projectName):
     """
 
     # Initialize wandb run
-    # run = wandb.init(project = projectName,  resume="allow",  id = run_id)
-
-    # # Collect registered post ids
-    # historyData= returnData(username = username, project = projectName, id = run_id)
+    run = wandb.init(project = projectName,  resume="allow",  id = run_id)
+    # Collect registered post ids
+    historyData= returnData(username = username, project = projectName, id = run_id)
     
-    api = wandb.Api()
-    runs = api.runs(f"{username}/{projectName}")
-    historyData = []
-    for eachrun in runs:
-        run_data = returnData(username = username, project = projectName, id = eachrun.id)
-        historyData.append(run_data)
+   
     
     # Iterate over all data
     for data in all_data:
         if(data is not None):
-            run = wandb.init(project = projectName,  resume="allow")
             for item in data:
                 # Check if miner's response already exists in storage
                 # Check if history is empty
-                if historyData is None or historyData == []:
+                if historyData.empty or historyData is None:
                     wandb.log({
                         "id": item['id'],
                         "title": item['title'],
@@ -63,13 +56,8 @@ def store_reddit(all_data, username, projectName):
                         "type": item['type']
                     })
                 else:
-                    filtered_data = None
-                    for history in historyData:
-                        if history is None or history.empty:
-                            continue
-                        filtered_data = history[history['id'] == item['id']]
+                    filtered_data = historyData[historyData['id'] == item['id']]
                     # Log the data to wandb
-                    
                     if filtered_data.empty or filtered_data is None:
                         wandb.log({
                             "id": item['id'],
@@ -79,14 +67,11 @@ def store_reddit(all_data, username, projectName):
                             "created_at": item['created_at'],
                             "type": item['type']
                         })
-            run.finish()
-        else:
-            print("No data found")
     # Finish the run
-    
+    run.finish()
 
 # Function to store all responses from all miners to wandb for Twitter data
-def store_twitter(all_data,username, projectName):
+def store_twitter(all_data,username, projectName, run_id):
     """
     This function stores all responses from all miners to wandb for Twitter data.
 
@@ -97,17 +82,10 @@ def store_twitter(all_data,username, projectName):
     """
 
     # Initialize wandb run
-    # run = wandb.init(project = projectName, resume="allow", id = run_id)
-
-    # # Collect registered post ids
-    # historyData= returnData(username = username, project = projectName, id = run_id)
-    api = wandb.Api()
-    runs = api.runs(f"{username}/{projectName}")
-    historyData = []
+    run = wandb.init(project = projectName, resume="allow", id = run_id)
     
-    for eachrun in runs:
-        run_data = returnData(username = username, project = projectName, id = eachrun.id)
-        historyData.append(run_data)
+    # Collect registered post ids
+    historyData= returnData(username = username, project = projectName, id = run_id)
     
     # history_ids = []
     # for index, item in historyData.iterrows():
@@ -116,11 +94,10 @@ def store_twitter(all_data,username, projectName):
     # Iterate over all data
     for data in all_data:
         if data is not None:
-            run = wandb.init(project = projectName,  resume="allow")
             for item in data:
                 # Check if miner's response already exists in storage
                 # Check if post already exists in history
-                if historyData is None or historyData is []:
+                if historyData.empty or historyData is None:
                     # Log the data to wandb
                     wandb.log({
                         "id": item['id'],
@@ -130,13 +107,7 @@ def store_twitter(all_data,username, projectName):
                         "type": item['type']
                     })
                 else: 
-                    filtered_data = None
-                    for history in historyData:
-                        if history is None or history.empty:
-                            continue
-                        filtered_data = history[history['id'] == item['id']]
-                    # Log the data to wandb
-                    
+                    filtered_data = historyData[historyData['id'] == item['id']]
                     if filtered_data.empty or filtered_data is None:
                         # Log the data to wandb
                         wandb.log({
@@ -146,11 +117,10 @@ def store_twitter(all_data,username, projectName):
                             "created_at": item['created_at'],
                             "type": item['type']
                         })
-            run.finish()
         else:
-            print("No data found")
+            continue
     # Finish the run
-    
+    run.finish()
 
 
 
@@ -171,23 +141,3 @@ def returnData(username, project, id):
     run = api.run(f"{username}/{project}/{id}")
     historyData = run.history()
     return historyData
-# Function to return all data in wandb project
-def returnAllProjectData(username, project):
-    """
-    This function returns all data in wandb project.
-
-    Args:
-        project (str): The name of the project. Defaults to "scraping_subnet-neurons".
-        id (str): The id of the run. Defaults to "g1ibv7db".
-
-    Returns:
-        DataFrame: The DataFrame of the history data.
-    """
-    api = wandb.Api()
-    runs = api.runs(f"{username}/{project}")
-    historyData = []
-    for eachrun in runs:
-        run_data = returnData(username = username, project = project, id = eachrun.id)
-        historyData.append(run_data)
-    return historyData
-
