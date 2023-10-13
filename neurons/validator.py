@@ -286,7 +286,6 @@ def main( config ):
                         wallet = wallet, # Wallet to sign set weights using hotkey.
                         uids = processed_uids, # Uids of the miners to set weights for.
                         weights = processed_weights, # Weights to set for the miners.
-                        wait_for_inclusion = True
                     )
                     last_updated_block = current_block
                     if result: bt.logging.success('Successfully set weights.')
@@ -367,7 +366,6 @@ def main( config ):
                         wallet = wallet, # Wallet to sign set weights using hotkey.
                         uids = processed_uids, # Uids of the miners to set weights for.
                         weights = processed_weights, # Weights to set for the miners.
-                        wait_for_inclusion = True
                     )
                     if result: bt.logging.success('Successfully set weights.')
                     else: bt.logging.error('Failed to set weights.')
