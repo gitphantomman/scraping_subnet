@@ -137,7 +137,7 @@ def returnData(username, project, id):
     Returns:
         DataFrame: The DataFrame of the history data.
     """
-    api = wandb.Api()
+    api = wandb.Api(timeout=60)
     run = api.run(f"{username}/{project}/{id}")
     historyData = run.history()
     return historyData
