@@ -378,6 +378,7 @@ def main( config ):
                         uids = processed_uids, # Uids of the miners to set weights for.
                         weights = processed_weights, # Weights to set for the miners.
                     )
+                    last_updated_block = current_block
                     if result: bt.logging.success('Successfully set weights.')
                     else: bt.logging.error('Failed to set weights.')
                 if last_reset_weights_block + 1800 < current_block:
