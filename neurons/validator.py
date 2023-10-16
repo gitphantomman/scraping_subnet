@@ -130,6 +130,7 @@ def main( config ):
 
     # Init miner scores and other params
     alpha = 0.9
+    twitterAlpha = 0.8
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
     bt.logging.info(f"initalScores:{scores}")
     curr_block = subtensor.block
@@ -230,7 +231,7 @@ def main( config ):
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             bt.logging.info(f"filtered_axons: {filtered_axons}")
             # Broadcast a GET_DATA query to filtered miners on the network.
-            if (step + 1) % 2 == 0:
+            if (step + 1) % 5 == 0:
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
@@ -254,7 +255,7 @@ def main( config ):
                             # Update the global score of the miner.
                             # This score contributes to the miner's weight in the network.
                             # A higher weight means that the miner has been consistently responding correctly.
-                        scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score 
+                        scores[dendrites_to_query[i]] = twitterAlpha * scores[dendrites_to_query[i]] + (1 - twitterAlpha) * score 
                 except:
                     bt.logging.error("Error in twitterScore")
                         
@@ -311,7 +312,7 @@ def main( config ):
                     # set all nodes without ips set to 0
                     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 2 == 1:
+            if (step + 1) % 3 == 1:
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
