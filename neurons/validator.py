@@ -178,6 +178,8 @@ def main( config ):
 
     # Main loop
     while True:
+        
+        
         # Per 10 blocks, sync the subtensor state with the blockchain.
         if step % 5 == 0:
             metagraph.sync(subtensor = subtensor)
@@ -241,28 +243,34 @@ def main( config ):
                 
 
                 # Update score
-                for i, resp_i in enumerate(responses):
-                # Initialize the score of each miner.
-                    score = 0
-                    # If the miner did not respond, set its score to 0.
-                    if resp_i != None:
-                        # Evaluate how is the miner's performance.
-                        score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['twitter'])
-                        # Update the global score of the miner.
-                        # This score contributes to the miner's weight in the network.
-                        # A higher weight means that the miner has been consistently responding correctly.
-                    scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score 
-                    
+                try:
+                    for i, resp_i in enumerate(responses):
+                    # Initialize the score of each miner.
+                        score = 0
+                        # If the miner did not respond, set its score to 0.
+                        if resp_i != None:
+                            # Evaluate how is the miner's performance.
+                            score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['twitter'])
+                            # Update the global score of the miner.
+                            # This score contributes to the miner's weight in the network.
+                            # A higher weight means that the miner has been consistently responding correctly.
+                        scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score 
+                except:
+                    bt.logging.error("Error in twitterScore")
+                        
                 bt.logging.info(f"Scores: {scores}")
                 # Store into Wandb
                 # check if there is any data
-                
-                if len(responses) > 0:
-                    # store data into wandb
-                    store_Twitter_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['twitter'])
-                else:
-                    print("No data found")
+                try:
+                    if len(responses) > 0:
+                        # store data into wandb
+                        store_Twitter_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['twitter'])
+                    else:
+                        print("No data found")
+                except:
+                    bt.logging.error("Error in store_Twitter_wandb")
                     
+                        
                 current_block = subtensor.block
                 print(current_block - last_updated_block)
                 if current_block - last_updated_block > 100:
@@ -316,29 +324,32 @@ def main( config ):
                 
 
                 # Update score
-                for i, resp_i in enumerate(responses):
-                # Initialize the score of each miner.
-                    score = 0
-                    # If the miner did not respond, set its score to 0.
-                    if resp_i != None:
-                        # Evaluate how is the miner's performance.
-                        score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['reddit'])
-                        # Update the global score of the miner.
-                        # This score contributes to the miner's weight in the network.
-                        # A higher weight means that the miner has been consistently responding correctly.
-                    scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score
-                    
+                try:
+                    for i, resp_i in enumerate(responses):
+                    # Initialize the score of each miner.
+                        score = 0
+                        # If the miner did not respond, set its score to 0.
+                        if resp_i != None:
+                            # Evaluate how is the miner's performance.
+                            score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['reddit'])
+                            # Update the global score of the miner.
+                            # This score contributes to the miner's weight in the network.
+                            # A higher weight means that the miner has been consistently responding correctly.
+                        scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score
+                except:
+                    bt.logging.error("Error in redditScore")
+
                 bt.logging.info(f"Scores: {scores}")
                 # Store into Wandb
                 # check if there is any data
-                
-                if len(responses) > 0:
-                    # store data into wandb
-                    store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['reddit'])
-                else:
-                    print("No data found")
-
-                
+                try:
+                    if len(responses) > 0:
+                        # store data into wandb
+                        store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['reddit'])
+                    else:
+                        print("No data found")
+                except:
+                    bt.logging.error("Error in store_Reddit_wandb")                
                 
                 # If the metagraph has changed, update the weights.
                 # Adjust the scores based on responses from miners.
@@ -380,7 +391,7 @@ def main( config ):
                     scores = scores * (metagraph.total_stake < 1.024e3) 
 
                     # set all nodes without ips set to 0
-                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in meta.uids])
+                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             step += 1
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
@@ -391,12 +402,12 @@ def main( config ):
         except RuntimeError as e:
             bt.logging.error(e)
             traceback.print_exc()
-
+            
         # If the user interrupts the program, gracefully exit.
         except KeyboardInterrupt:
             bt.logging.success("Keyboard interrupt detected. Exiting validator.")
             exit()
-
+        
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
     # Parse the configuration.
