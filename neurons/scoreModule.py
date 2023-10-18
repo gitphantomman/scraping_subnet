@@ -158,7 +158,7 @@ def twitterScore( response ,username='aureliojafer', project = 'scraping_subnet-
             timeScore = 1.0
 
         # Return score calculated by time score and unique score
-        return max(1 - 0.1 * timeScore - 0.3 * unique_score - 0.2 * wrong_score - min(0.4, 4 / total_length), 0)
+        return max(1 - 0.1 * timeScore - 0.3 * unique_score - 0.2 * wrong_score - 0.4 * max(1 - 0.25 * total_length, 0), 0)
     else:
         return 0
     
