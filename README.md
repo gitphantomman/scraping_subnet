@@ -143,6 +143,7 @@ python validator.py
     --wallet.hotkey <your validator hotkey> # hotkey name of your wallet
     --wandb.username <your wandb username> # your wandb username
     --wandb.project <your wandb project name> # the wandb project name you want to save to (Default: zhjgapym)
+    --wandb.override_config # Boolean flag that, when set (override) the `wandb_config.json` with command line arguments. (default: False)
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
 ```
 
