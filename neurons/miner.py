@@ -102,7 +102,7 @@ def main( config ):
     last_updated_block = subtensor.block - 100
 
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
-        bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli wallet register and try again. ")
+        bt.logging.error(f"\nYour miner: {wallet} is not registered to chain connection: {subtensor} \nRun btcli wallet register and try again. ")
         exit()
     else:
         # Each miner gets a unique identity (UID) in the network for differentiation.
