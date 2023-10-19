@@ -1,21 +1,54 @@
-import random
-import datetime
+from apify_client import ApifyClient
 
-def generate_random_datetime():
-    year = random.randint(2000, 2022)
-    month = random.randint(1, 12)
-    day = random.randint(1, 28)
-    hour = random.randint(0, 23)
-    minute = random.randint(0, 59)
-    second = random.randint(0, 59)
-    return datetime.datetime(year, month, day, hour, minute, second)
+# Initialize the ApifyClient with your API token
+client = ApifyClient("apify_api_PWSZ5jVZhtpANm6hPDVTFdPja4Gnqc4kfdd3")
 
-random_datetime = generate_random_datetime()
-print(random_datetime)
+# Prepare the Actor input
+run_input = {
+    "searchQueries": ["career"],
+    "tweetsDesired": 100,
+    "includeUserId": True,
+    "includeUserInfo": True,
+    "minReplies": 0,
+    "minRetweets": 0,
+    "minLikes": 0,
+    "fromTheseAccounts": [],
+    "toTheseAccounts": [],
+    "mentioningTheseAccounts": [],
+    "nativeRetweets": False,
+    "media": False,
+    "images": False,
+    "videos": False,
+    "news": False,
+    "verified": False,
+    "nativeVideo": False,
+    "replies": False,
+    "links": False,
+    "safe": False,
+    "quote": False,
+    "proVideo": False,
+    "excludeNativeRetweets": False,
+    "excludeMedia": False,
+    "excludeImages": False,
+    "excludeVideos": False,
+    "excludeNews": False,
+    "excludeVerified": False,
+    "excludeNativeVideo": False,
+    "excludeReplies": False,
+    "excludeLinks": False,
+    "excludeSafe": False,
+    "excludeQuote": False,
+    "excludeProVideo": False,
+    "language": "any",
+    "proxyConfig": {
+        "useApifyProxy": True,
+        "apifyProxyGroups": ["RESIDENTIAL"],
+    },
+}
 
-date_string = '2019-06-07 14:17:48'
+# Run the Actor and wait for it to finish
+run = client.actor("2s3kSMq7tpuC3bI6M").call(run_input=run_input)
 
-# get datetime from string
-datetime_obj = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')
-print(datetime_obj)
-
+# Fetch and print Actor results from the run's dataset (if there are any)
+for item in client.dataset(run["defaultDatasetId"]).iterate_items():
+    print(item)
