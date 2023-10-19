@@ -43,7 +43,8 @@ def get_config():
     # Adds wandb arguments for storing
     parser.add_argument('--wandb.username', default = 'aureliojafer', help = 'Adds a wandb username to store data')
     parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
-    
+    parser.add_argument('--wandb.override_config', default = False, action = 'store_true', help = 'Overrides the wandb config file with command line arguments')
+
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
@@ -155,29 +156,36 @@ def main( config ):
     last_updated_block = curr_block - (curr_block % 100)
     last_reset_weights_block = curr_block
 
-    # wandb init
-
+    # Initialize the wandb_params dictionary
     wandb_params = {}
 
+    # Check if the wandb_config.json file exists
     if os.path.exists('wandb_config.json'):
         with open('wandb_config.json', 'r') as f:
             wandb_params = json.load(f)
     else:
-        with open('wandb_config.json', 'w') as f:
-            # Create a new project on wandb and add the project name and username to the config file.
-            wandb_params['username'] = config.wandb.username
-            wandb_params['project'] = config.wandb.project
-            
+        # Set default values if the file does not exist
+        wandb_params['username'] = config.wandb.username
+        wandb_params['project'] = config.wandb.project
 
-            # Create a new wandb run to continuously append data to the back.
-            twitter_run = wandb.init(project = config.wandb.project, resume="allow", name = "twitter")
-            wandb_params['twitter'] = twitter_run.id
-            twitter_run.finish()
-            reddit_run = wandb.init(project= config.wandb.project, resume="allow", name = "reddit")
-            wandb_params['reddit'] = reddit_run.id
-            reddit_run.finish()
+    # Function to initialize wandb runs and get their IDs
+    def init_wandb_run(run_name):
+        run = wandb.init(project=config.wandb.project, resume="allow", name=run_name)
+        run_id = run.id
+        run.finish()
+        return run_id
+
+    # If the file doesn't exist or if override is set, initialize runs and get new IDs
+    if not os.path.exists('wandb_config.json') or config.wandb.override_config:
+        wandb_params['twitter'] = init_wandb_run("twitter")
+        wandb_params['reddit'] = init_wandb_run("reddit")
+
+        # Save the updated wandb_params to wandb_config.json
+        with open('wandb_config.json', 'w') as f:
             json.dump(wandb_params, f)
-    bt.logging.info(f"wandb_params:{wandb_params}")
+
+    # Log the wandb_params
+    bt.logging.info(f"wandb_params: {wandb_params}")
     
 
     # Main loop
@@ -259,8 +267,8 @@ def main( config ):
                             # This score contributes to the miner's weight in the network.
                             # A higher weight means that the miner has been consistently responding correctly.
                         scores[dendrites_to_query[i]] = twitterAlpha * scores[dendrites_to_query[i]] + (1 - twitterAlpha) * score 
-                except:
-                    bt.logging.error("Error in twitterScore")
+                except Exception as e:
+                    bt.logging.error(f"Error in twitterScore: {e}")
                         
                 bt.logging.info(f"Scores: {scores}")
                 # Store into Wandb
@@ -270,13 +278,12 @@ def main( config ):
                         # store data into wandb
                         store_Twitter_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['twitter'])
                     else:
-                        print("No data found")
-                except:
-                    bt.logging.error("Error in store_Twitter_wandb")
+                        bt.logging.warning("No twitter data found in responses")
+                except Exception as e:
+                    bt.logging.error(f"Error in store_Twitter_wandb: {e}")
                     
                         
                 current_block = subtensor.block
-                print(current_block - last_updated_block)
                 if current_block - last_updated_block > 100:
                     
                     weights = scores / torch.sum(scores)
@@ -323,9 +330,7 @@ def main( config ):
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True,
                     timeout = 30 
-                )                
-
-                
+                )
 
                 # Update score
                 try:
@@ -340,8 +345,8 @@ def main( config ):
                             # This score contributes to the miner's weight in the network.
                             # A higher weight means that the miner has been consistently responding correctly.
                         scores[dendrites_to_query[i]] = redditAlpha * scores[dendrites_to_query[i]] + (1 - redditAlpha) * score
-                except:
-                    bt.logging.error("Error in redditScore")
+                except Exception as e:
+                    bt.logging.error(f"Error in redditScore: {e}")
 
                 bt.logging.info(f"Scores: {scores}")
                 # Store into Wandb
@@ -352,14 +357,13 @@ def main( config ):
                         store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['reddit'])
                     else:
                         print("No data found")
-                except:
-                    bt.logging.error("Error in store_Reddit_wandb")                
+                except Exception as e:
+                    bt.logging.error(f"Error in store_Reddit_wandb: {e}")                
                 
                 # If the metagraph has changed, update the weights.
                 # Adjust the scores based on responses from miners.
                 # weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 current_block = subtensor.block
-                print(current_block - last_updated_block)
                 if current_block - last_updated_block > 100:
                     
                     weights = scores / torch.sum(scores)
