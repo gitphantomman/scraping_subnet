@@ -128,23 +128,26 @@ def main( config ):
 
     bt.logging.info("Building validation weights.")
 
-    # Init miner scores and other params
-    alpha = 0.9
+    # Initialize alpha for reddit and twitter
+    redditAlpha = 0.9
     twitterAlpha = 0.8
+
+    # Initialize weights for each miner to 1.
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
-    bt.logging.info(f"initalScores:{scores}")
-    curr_block = subtensor.block
-    # scores = scores * metagraph.last_update > cur_block - 10
-    # scores = scores * metagraph.last_update > curr_block - 600
-    bt.logging.info(f"Scores after last update:{scores}")
+    bt.logging.info(f"inital miner scores:{scores}")
+
     
+    curr_block = subtensor.block
+
+    # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
     scores = scores * (metagraph.total_stake < 1.024e3)
+    # set all nodes without ips set to 0
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
     step = 0
     
     
 
-    bt.logging.info(f"Weights: {scores}")
+    bt.logging.info(f"Initial scores: {scores}")
     bt.logging.info("Starting validator loop.")
     
     total_dendrites_per_query = 25
@@ -179,8 +182,6 @@ def main( config ):
 
     # Main loop
     while True:
-        
-        
         # Per 10 blocks, sync the subtensor state with the blockchain.
         if step % 5 == 0:
             metagraph.sync(subtensor = subtensor)
@@ -225,17 +226,19 @@ def main( config ):
         dendrites_to_query = random.sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
         bt.logging.info(f"dendrites_to_query:{dendrites_to_query}")
             
-
+        # every 2 minutes, query the miners
         try:
             # Filter metagraph.axons by indices saved in dendrites_to_query list
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             bt.logging.info(f"filtered_axons: {filtered_axons}")
             # Broadcast a GET_DATA query to filtered miners on the network.
+
+            # * every 10 minutes, query the miners for twitter data
             if (step + 1) % 5 == 0:
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.TwitterScrap(), # Construct a scraping query.
+                    scraping.protocol.TwitterScrap(scrap_input="tao"), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
                     timeout = 30
@@ -336,7 +339,7 @@ def main( config ):
                             # Update the global score of the miner.
                             # This score contributes to the miner's weight in the network.
                             # A higher weight means that the miner has been consistently responding correctly.
-                        scores[dendrites_to_query[i]] = alpha * scores[dendrites_to_query[i]] + (1 - alpha) * score
+                        scores[dendrites_to_query[i]] = redditAlpha * scores[dendrites_to_query[i]] + (1 - redditAlpha) * score
                 except:
                     bt.logging.error("Error in redditScore")
 
