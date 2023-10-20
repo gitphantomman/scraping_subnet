@@ -93,6 +93,18 @@ python twitterScrap.py
 python redditScrap.py
 ```
 
+3. If you want to run twitter scraping script as a **cron job**.
+
+An example to scrape twitter every 6 hours. Edit your crontab with command `crontab -e`. Please note, your `python` and `twitterScrap.py` locations may (most likely!) vary, so adjust accordingly. 
+```bash
+# Set variables
+BEARER_TOKEN=<token from twitter>
+SINGLE_RUN=true
+# Number of twits to fetch per request
+R_LIMIT=100
+0 */6 * * * python neurons/twitterScrap.py > ~/twitter_scraper.log
+```
+
 
 ## Running Miner Script
 A miner periodically extracts specified data from Twitter using scraping tools or APIs, store this data securely, and then retrieve and provide this data in response to queries from validators, who evaluate the data based on predetermined criteria.
