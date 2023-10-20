@@ -43,10 +43,10 @@ class TwitterConfig:
     # Maximum requests for given bearer token. Default is 10 000
     max_requests: int = 10000
 
-    def __init__(self, limit=100):
+    def __init__(self):
         self.bearer = os.getenv("BEARER_TOKEN")
         self.single = False if os.getenv("SINGLE_RUN") is not None else True
-        self.limit = limit
+        self.limit = os.getenv("R_LIMIT", 100)
 
     def get_token(self):
         return self.bearer
@@ -86,6 +86,7 @@ def scrap_twitter(config: TwitterConfig, key="tao"):
     print(f"Scraping twitter for keyword: {key}, max items: {config.get_limit()}")
     # Construct the URL for the Twitter API
     url = f"https://api.twitter.com/2/tweets/search/recent?query={key}&tweet.fields=created_at&max_results={config.get_limit()}"
+    print(f"Making request to: {url}")
     payload = {}
     headers = {
         'Authorization': f'Bearer {config.get_token()}',
@@ -160,7 +161,7 @@ def single_scrape(config: TwitterConfig):
 
 
 def init():
-    config = TwitterConfig(12)
+    config = TwitterConfig()
     print(config)
     # Start the continuous scraping when the script is run directly
     if config.is_repeatable():
