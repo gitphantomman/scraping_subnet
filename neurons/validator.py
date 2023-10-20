@@ -246,7 +246,7 @@ def main( config ):
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.TwitterScrap(scrap_input="tao"), # Construct a scraping query.
+                    scraping.protocol.TwitterScrap(), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
                     timeout = 30
