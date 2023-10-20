@@ -29,27 +29,52 @@ from os.path import exists
 
 load_dotenv()
 
-# Get bearer token from environment variables
-bearer_token = os.getenv("BEARER_TOKEN")
+
+class TwitterConfig:
+    """Configuration class to hold basic twitter and scraper configurations"""
+    # The Twitter API bearer token. Default is None
+    bearer: str = None
+    # Should the script be a single run only. Default is False
+    single: bool = False
+    # Number of tweets to get per single request. Default is 100
+    limit: int = 100
+    # How many seconds to wait before scraping again. Default is 16
+    sleep_interval: int = 16
+    # Maximum requests for given bearer token. Default is 10 000
+    max_requests: int = 10000
+
+    def __init__(self, limit=100):
+        self.bearer = os.getenv("BEARER_TOKEN")
+        self.single = True if os.getenv("SINGLE_RUN") is not None else False
+        self.limit = limit
+
+    def get_token(self):
+        return self.bearer
+
+    def get_limit(self):
+        return self.limit
+
+    def is_repeatable(self):
+        return self.single is None
 
 
-def scrapTwitter(max_limit=100, key="tao"):
+def scrapTwitter(config: TwitterConfig, key="tao"):
     """
     Function to scrape recent tweets based on a keyword.
 
     Args:
-        max_limit (int): Maximum number of tweets to fetch. Default is 100.
+        config (TwitterConfig): Twitter configuration
         key (str): Keyword to search in tweets. Default is 'bittensor'.
 
     Returns:
         None
     """
-    print(f"Scraping twitter for keyword: {key}, max items: {max_limit}")
+    print(f"Scraping twitter for keyword: {key}, max items: {config.get_limit()}")
     # Construct the URL for the Twitter API
-    url = f"https://api.twitter.com/2/tweets/search/recent?query={key}&tweet.fields=created_at&max_results={max_limit}"
+    url = f"https://api.twitter.com/2/tweets/search/recent?query={key}&tweet.fields=created_at&max_results={config.get_limit()}"
     payload = {}
     headers = {
-        'Authorization': f'Bearer {bearer_token}',
+        'Authorization': f'Bearer {config.get_token()}',
     }
     try:
         # Send a GET request to the Twitter API
@@ -99,5 +124,9 @@ def continuous_scrape(interval=16):
 
 
 if __name__ == "__main__":
+    config = TwitterConfig(12)
     # Start the continuous scraping when the script is run directly
-    continuous_scrape()
+    if config.is_repeatable():
+        continuous_scrape()
+    else:
+        print(f"Executing single twitter scrap.")

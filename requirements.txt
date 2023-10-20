@@ -1,8 +1,10 @@
 git+https://github.com/opentensor/bittensor.git@master
-torch
-praw
-python-dotenv
-SQLAlchemy
+torch~=2.1.0
+praw~=7.7.1
+python-dotenv~=1.0.0
+SQLAlchemy~=2.0.21
 tweepy
-pandas
-wandb
+pandas~=2.1.1
+wandb~=0.15.12
+requests~=2.31.0
+setuptools~=68.2.0
