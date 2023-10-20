@@ -45,20 +45,34 @@ class TwitterConfig:
 
     def __init__(self, limit=100):
         self.bearer = os.getenv("BEARER_TOKEN")
-        self.single = True if os.getenv("SINGLE_RUN") is not None else False
+        self.single = False if os.getenv("SINGLE_RUN") is not None else True
         self.limit = limit
 
     def get_token(self):
         return self.bearer
 
+    def get_token_hidden(self):
+        return self.bearer[0:5] + "..." + self.bearer[len(self.bearer) - 5:] if self.bearer is not None else "None"
+
     def get_limit(self):
         return self.limit
 
     def is_repeatable(self):
-        return self.single is None
+        return self.single
+
+    def __str__(self):
+        return '''Configuration:
+        Bearer: {bearer}
+        Single run: {single}
+        Limit: {limit}
+        Sleep Interval: {sleep}
+        Max Requests: {max_r}
+        '''.format(bearer=self.get_token_hidden(), single=self.single, limit=self.get_limit(),
+                   sleep=self.sleep_interval,
+                   max_r=self.max_requests)
 
 
-def scrapTwitter(config: TwitterConfig, key="tao"):
+def scrap_twitter(config: TwitterConfig, key="tao"):
     """
     Function to scrape recent tweets based on a keyword.
 
@@ -79,6 +93,9 @@ def scrapTwitter(config: TwitterConfig, key="tao"):
     try:
         # Send a GET request to the Twitter API
         response = requests.request("GET", url, headers=headers, data=payload)
+        if response.status_code != 200:
+            raise Exception(
+                f"Did not get expected status code from twitter API. Expected 200, got {response.status_code}.")
         # Parse the JSON response
         returnData = response.json()['data']
         if returnData.__len__() == 0:
@@ -89,23 +106,23 @@ def scrapTwitter(config: TwitterConfig, key="tao"):
             # Store each tweet into the database
             store_data(twitterPost)
     except Exception as e:
-        print('Invalid Key')
+        raise Exception(f"Failed to scrape twitter! {e}")
 
 
-def random_line(afile="keywords.txt"):
-    if not exists(afile):
-        print(f"Keyword file not found at location: {afile}")
+def random_line(a_file="keywords.txt"):
+    if not exists(a_file):
+        print(f"Keyword file not found at location: {a_file}")
         quit()
-    lines = open(afile).read().splitlines()
+    lines = open(a_file).read().splitlines()
     return random.choice(lines)
 
 
-def continuous_scrape(interval=16):
+def continuous_scrape(config: TwitterConfig):
     """
     Function to continuously scrape tweets at a specified interval.
 
     Args:
-        interval (int): Time interval (in seconds) between each scrape. Default is 16 seconds.
+        config (TwitterConfig): Twitter and scraper configuration class.
 
     Returns:
         None
@@ -114,19 +131,43 @@ def continuous_scrape(interval=16):
         try:
             randomKey = random_line()
             # Scrape tweets
-            scrapTwitter(key=randomKey)
+            scrap_twitter(config, key=randomKey)
             print("Scraping done. Waiting for the next round...")
             # Wait for the specified interval before the next round
-            time.sleep(interval)
+            time.sleep(config.sleep_interval)
         except Exception as e:
-            print(f"Error occurred: {e}")
-            time.sleep(16)  # Wait for 30s before trying again
+            print(f"{e}")
+            time.sleep(30)  # Wait for 30s before trying again
+
+
+def single_scrape(config: TwitterConfig):
+    """
+    Function to scrape tweets once only.
+
+    Args:
+        config (TwitterConfig): Twitter and scraper configuration class.
+
+    Returns:
+        None
+    """
+    try:
+        randomKey = random_line()
+        # Scrape tweets
+        scrap_twitter(config, key=randomKey)
+        print("Scraping done.")
+    except Exception as e:
+        print(f"{e}")
+
+
+def init():
+    config = TwitterConfig(12)
+    print(config)
+    # Start the continuous scraping when the script is run directly
+    if config.is_repeatable():
+        continuous_scrape(config)
+    else:
+        single_scrape(config)
 
 
 if __name__ == "__main__":
-    config = TwitterConfig(12)
-    # Start the continuous scraping when the script is run directly
-    if config.is_repeatable():
-        continuous_scrape()
-    else:
-        print(f"Executing single twitter scrap.")
+    init()
