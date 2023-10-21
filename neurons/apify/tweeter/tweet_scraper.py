@@ -1,14 +1,12 @@
-from apify_client import ApifyClient
+from neurons.apify.apify import ApifyConfig, run_actor
 
-# Initialize the ApifyClient with your API token
-client = ApifyClient("apify_api_PWSZ5jVZhtpANm6hPDVTFdPja4Gnqc4kfdd3")
-
-# Prepare the Actor input
-def getTweets():
+if __name__ == '__main__':
+    config = ApifyConfig()
+    config.api_key = "apify_api_PWSZ5jVZhtpANm6hPDVTFdPja4Gnqc4kfdd3"
 
     run_input = {
         "searchQueries": ["career"],
-        "tweetsDesired": 100,
+        "tweetsDesired": 10,
         "includeUserId": True,
         "includeUserInfo": True,
         "minReplies": 0,
@@ -48,9 +46,6 @@ def getTweets():
         },
     }
 
-    # Run the Actor and wait for it to finish
-    run = client.actor("2s3kSMq7tpuC3bI6M").call(run_input=run_input)
-
-    # Fetch and print Actor results from the run's dataset (if there are any)
-    for item in client.dataset(run["defaultDatasetId"]).iterate_items():
+    data_set = run_actor("2s3kSMq7tpuC3bI6M", {}, config=config)
+    for item in data_set:
         print(item)
