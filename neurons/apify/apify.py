@@ -41,27 +41,22 @@ class ApifyConfig:
         '''.format(api_key=mask_sensitive_data(self.api_key))
 
 
-def run_actor(actor_id: str, run_input, default_dataset_id="defaultDatasetId", config=None):
+def run_actor(config, run_input, default_dataset_id="defaultDatasetId"):
     """
         Function to scrape recent posts based on a query.
 
         Args:
-            actor_id (str): The id of the actor to run.
             run_input (dict): The input to the actor.
             default_dataset_id: `defaultDatasetId`
             config (ApifyConfig): The configuration to use. Defaults to ApifyConfig().
         Returns:
             None
         """
-
-    if config is None:
-        config = ApifyConfig()
-
     client = ApifyClient(config.api_key)
 
-    logger.info("Running actor: {actor_id}".format(actor_id=actor_id))
+    logger.info("Running actor: {actor_id}".format(actor_id=config.actor_id))
 
-    run = client.actor(actor_id).call(run_input=run_input)
+    run = client.actor(config.actor_id).call(run_input=run_input)
 
     logger.info("Actor run: {run}".format(run=run))
 

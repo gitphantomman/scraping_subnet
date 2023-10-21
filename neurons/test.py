@@ -1,2 +1,2 @@
-from neurons.apify.tweeter.tweet_flush import getTweets
+from neurons.apify.tweeter.tweet_flush_query import getTweets
 getTweets()
