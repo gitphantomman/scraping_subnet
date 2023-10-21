@@ -20,37 +20,46 @@ DEALINGS IN THE SOFTWARE.
 import os
 import logging
 from apify_client import ApifyClient
-from neurons.utils import mask_sensitive_data
 
+# Set up logger for the script
 logger = logging.getLogger(__name__)
 
 
 class ActorConfig:
-    def __init__(self, actor_id):
-        self.api_key = os.environ.get('APIFY_API_KEY')
-        self.actor_id = actor_id
-
-
-def run_actor(actor_config: ActorConfig, run_input, default_dataset_id="defaultDatasetId"):
     """
-        Function to scrape recent posts based on a query.
+    Configuration class for actors in Apify.
+    """
+    def __init__(self, actor_id: str):
+        """
+        Initialize the actor configuration with API key and actor ID.
 
         Args:
-            run_input (dict): The input to the actor.
-            default_dataset_id: `defaultDatasetId`
-            actor_config (ActorConfig): The configuration to use. Defaults to ApifyConfig().
-        Returns:
-            None
+            actor_id (str): The ID of the actor.
         """
+        self.api_key = os.environ.get('APIFY_API_KEY')  # Get the Apify API key from environment variable
+        self.actor_id = actor_id  # Actor ID
+
+
+def run_actor(actor_config: ActorConfig, run_input: dict, default_dataset_id: str = "defaultDatasetId"):
+    """
+    Run an actor in Apify and fetch the resulting data.
+
+    Args:
+        actor_config (ActorConfig): The configuration to use for running the actor.
+        run_input (dict): The input parameters for the actor run.
+        default_dataset_id (str, optional): ID of the dataset to fetch data from. Defaults to "defaultDatasetId".
+
+    Returns:
+        list[dict]: List of items fetched from the dataset.
+    """
+    # Initialize the Apify client with the API key
     client = ApifyClient(actor_config.api_key)
-    logger.info("Running actor: {actor_id}".format(actor_id=actor_config.actor_id))
-    run = client.actor(actor_config.actor_id).call(run_input=run_input)
-    logger.info("Actor run: {run}".format(run=run))
+    logger.info(f"Running actor: {actor_config.actor_id}")
+    run = client.actor(actor_config.actor_id).call(run_input=run_input)  # Start the actor run
+    logger.info(f"Actor run: {run}")
 
-    data_set = []
-    for item in client.dataset(run[default_dataset_id]).iterate_items():
-        data_set.append(item)
+    # Fetch data items from the specified dataset
+    data_set = [item for item in client.dataset(run[default_dataset_id]).iterate_items()]
 
-    logger.info("Fetched {count} items from dataset".format(count=len(data_set)))
-
+    logger.info(f"Fetched {len(data_set)} items from dataset")
     return data_set
