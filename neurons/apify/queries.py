@@ -17,8 +17,8 @@ class QueryProvider(Enum):
     """
     Enum representing the different providers of queries.
     """
-    TWEET_SCRAPER = "tweet_scraper"
-    TWEET_FLUSH = "tweet_flush"
+    TWEET_SCRAPER = "apify_tweet_scraper"
+    TWEET_FLUSH = "apify_tweet_flush"
 
 
 # Mapping between query types and their respective classes
