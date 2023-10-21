@@ -25,42 +25,28 @@ from neurons.utils import mask_sensitive_data
 logger = logging.getLogger(__name__)
 
 
-class ApifyConfig:
-    """Configuration class to hold basic reddit and scraper configurations"""
-    # The Apify API key. Default is None
-    api_key: str = None
-    # Apify actor name
-    actor_id: str = None
-
-    def __init__(self):
-        self.api_key = os.getenv("APIFY_API_KEY")
-
-    def __str__(self):
-        return '''Configuration:
-        Api Key: {api_key}
-        '''.format(api_key=mask_sensitive_data(self.api_key))
+class ActorConfig:
+    def __init__(self, actor_id):
+        self.api_key = os.environ.get('APIFY_API_KEY')
+        self.actor_id = actor_id
 
 
-def run_actor(config, run_input, default_dataset_id="defaultDatasetId"):
+def run_actor(actor_config: ActorConfig, run_input, default_dataset_id="defaultDatasetId"):
     """
         Function to scrape recent posts based on a query.
 
         Args:
             run_input (dict): The input to the actor.
             default_dataset_id: `defaultDatasetId`
-            config (ApifyConfig): The configuration to use. Defaults to ApifyConfig().
+            actor_config (ActorConfig): The configuration to use. Defaults to ApifyConfig().
         Returns:
             None
         """
-    client = ApifyClient(config.api_key)
-
-    logger.info("Running actor: {actor_id}".format(actor_id=config.actor_id))
-
-    run = client.actor(config.actor_id).call(run_input=run_input)
-
+    client = ApifyClient(actor_config.api_key)
+    logger.info("Running actor: {actor_id}".format(actor_id=actor_config.actor_id))
+    run = client.actor(actor_config.actor_id).call(run_input=run_input)
     logger.info("Actor run: {run}".format(run=run))
 
-    # Fetch and print Actor results from the run's dataset (if there are any)
     data_set = []
     for item in client.dataset(run[default_dataset_id]).iterate_items():
         data_set.append(item)
