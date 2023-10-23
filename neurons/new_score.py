@@ -81,7 +81,7 @@ def calculateScore(responses = [], tag = 'tao'):
             # caluclate similarity score
             similarity_score += (id_counts[item['id']] - 1)
             # calculate time difference score
-            date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S')
+            date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
             time_diff = datetime.datetime.now() - date_object
             time_diff_score += time_diff.seconds
             
@@ -106,7 +106,7 @@ def calculateScore(responses = [], tag = 'tao'):
     print(f"length_list: {length_list}")
         
     score_list = (similarity_list * 0.3  + time_diff_list * 0.2 + length_list * 0.5)
-    print(score_list)
+    return score_list
         
 
 

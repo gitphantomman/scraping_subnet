@@ -69,7 +69,7 @@ class TweetFlushQuery:
         Returns:
             list: The mapped or transformed data.
         """
-        filtered_input = [{'tweet_id': item['tweet_id'], 'url': item['url'], 'text': item['text'], 'likes': item['likes'], 'images': item['images'], 'timestamp': item['timestamp']} for item in input]
+        filtered_input = [{'id': item['tweet_id'], 'url': item['url'], 'text': item['text'], 'likes': item['likes'], 'images': item['images'], 'timestamp': item['timestamp']} for item in input]
         return filtered_input
 
 

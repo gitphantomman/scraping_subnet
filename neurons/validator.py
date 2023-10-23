@@ -224,29 +224,19 @@ def main( config ):
                 
 
                 # Update score
+                new_scores = []
                 try:
                     if(len(responses) > 0 and responses is not None):
                         new_scores = calculateScore(responses = responses, tag = "bittensor")
+                        bt.logging.info(f"✅ new_scores: {new_scores}")
                 except Exception as e:
                     bt.logging.error(f"❌ Error in twitterScore: {e}")
-                bt.logging.info(f"New scores: {new_scores}")
-                # try:
-                #     for i, resp_i in enumerate(responses):
-                #     # Initialize the score of each miner.
-                #         score = 0
-                #         # If the miner did not respond, set its score to 0.
-                #         if resp_i != None:
-                #             # Evaluate how is the miner's performance.
-                #             score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['twitter'])
-                #             # Update the global score of the miner.
-                #             # This score contributes to the miner's weight in the network.
-                #             # A higher weight means that the miner has been consistently responding correctly.
-                #         scores[dendrites_to_query[i]] = twitterAlpha * scores[dendrites_to_query[i]] + (1 - twitterAlpha) * score 
-                # except Exception as e:
-                #     bt.logging.error(f"Error in twitterScore: {e}")
-                        
-                # bt.logging.info(f"Scores: {scores}")
-                # # Store into Wandb
+                for i, score_i in enumerate(new_scores):
+                    scores[dendrites_to_query[i]] = twitterAlpha * scores[dendrites_to_query[i]] + (1 - twitterAlpha) * score_i
+                bt.logging.info(f"✅ Updated Scores: {scores}")
+                
+                # Store 
+
                 # # check if there is any data
                 # try:
                 #     if len(responses) > 0:
