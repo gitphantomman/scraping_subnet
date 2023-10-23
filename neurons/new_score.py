@@ -22,7 +22,7 @@ DEALINGS IN THE SOFTWARE.
 import torch
 import datetime
 
-def calculateScore(responses = [[{'id': '3', 'text': 'This is first tweet.', 'created_at': '2023-10-18 14:17:48'}, {'id': '4', 'text': 'This is second tweet', 'created_at': '2023-10-17 09:55:38'}], [{'id': '4', 'text': 'This is second tweet', 'created_at': '2023-10-18 09:55:38'}, {'id': '5', 'text': 'This is last tweet', 'created_at': '2023-10-16 09:55:38'}]], tag = 'tao'):
+def calculateScore(responses = [], tag = 'tao'):
     """
     This function calculates the score of responses.
     The score is calculated by the degree of similarity between responses, accuracy and time difference.
@@ -81,7 +81,7 @@ def calculateScore(responses = [[{'id': '3', 'text': 'This is first tweet.', 'cr
             # caluclate similarity score
             similarity_score += (id_counts[item['id']] - 1)
             # calculate time difference score
-            date_object = datetime.datetime.strptime(item['created_at'], '%Y-%m-%d %H:%M:%S')
+            date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
             time_diff = datetime.datetime.now() - date_object
             time_diff_score += time_diff.seconds
             
@@ -106,10 +106,9 @@ def calculateScore(responses = [[{'id': '3', 'text': 'This is first tweet.', 'cr
     print(f"length_list: {length_list}")
         
     score_list = (similarity_list * 0.3  + time_diff_list * 0.2 + length_list * 0.5)
-    print(score_list)
+    return score_list
         
 
 
-calculateScore()
     
 

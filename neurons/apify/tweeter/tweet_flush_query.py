@@ -21,7 +21,7 @@ class TweetFlushQuery:
         """
         self.actor_config = actor_config
 
-    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 100) -> list:
+    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
         Execute the tweet flushing process using the specified search queries.
 
@@ -69,7 +69,8 @@ class TweetFlushQuery:
         Returns:
             list: The mapped or transformed data.
         """
-        return input
+        filtered_input = [{'id': item['tweet_id'], 'url': item['url'], 'text': item['text'], 'likes': item['likes'], 'images': item['images'], 'timestamp': item['timestamp']} for item in input]
+        return filtered_input
 
 
 if __name__ == '__main__':

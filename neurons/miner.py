@@ -31,6 +31,7 @@ import local_db.twitter_db as twitter_db
 import scraping
 from typing import Tuple
 import torch
+from neurons.apify.queries import get_query, QueryType, QueryProvider
 # TODO: Check if all the necessary libraries are installed and up-to-date
 
 def get_config():
@@ -76,6 +77,7 @@ def main( config ):
     This function takes the configuration and starts the miner.
     It sets up the necessary Bittensor objects, attaches the necessary functions to the axon, and starts the main loop.
     """
+    twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLUSH)
     # Activating Bittensor's logging with the set configurations.
     bt.logging(config=config, logging_dir=config.full_path)
     bt.logging.info(f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
@@ -182,10 +184,9 @@ def main( config ):
         This function runs after the blacklist and priority functions have been called.
         """
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
-        # Fetch latest N posts from miner's local database.
-        fetched_data = twitter_db.fetch_latest_posts(500)
-        synapse.scrap_output = fetched_data
-        bt.logging.info(f"number of response data: {len(synapse.scrap_output)} \n")
+        tweets = twitter_query.execute(synapse.scrap_input["search_key"])
+        synapse.scrap_output = tweets
+        bt.logging.info(f"✅ success: number of response data: {len(synapse.scrap_output)} \n")
         return synapse
     
     def redditScrap( synapse: scraping.protocol.RedditScrap) -> scraping.protocol.RedditScrap: 
