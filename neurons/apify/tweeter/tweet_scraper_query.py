@@ -18,7 +18,7 @@ class TweetScraperQuery:
         """
         self.actor_config = actor_config
 
-    def execute(self, search_queries: list = ["bittensor"]) -> list:
+    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 100) -> list:
         """
         Execute the tweet scraping process using the specified search queries.
 
@@ -87,9 +87,7 @@ class TweetScraperQuery:
 
 if __name__ == '__main__':
     # Define the Apify actor configuration
-    _config = ActorConfig()
-    _config.api_key = "apify_api_PWSZ5jVZhtpANm6hPDVTFdPja4Gnqc4kfdd3"  # Caution: Avoid hardcoding API keys!
-    _config.actor_id = "2s3kSMq7tpuC3bI6M"
+    _config = ActorConfig("u6ppkMWAx2E2MpEuF")
 
     # Initialize the tweet scraper query mechanism with the actor configuration
     query = TweetScraperQuery(actor_config=_config)
