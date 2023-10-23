@@ -18,7 +18,7 @@ class TweetScraperQuery:
         """
         self.actor_config = actor_config
 
-    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 100) -> list:
+    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
         Execute the tweet scraping process using the specified search queries.
 
@@ -30,7 +30,7 @@ class TweetScraperQuery:
         """
         run_input = {
             "searchQueries": search_queries,
-            "tweetsDesired": 10,
+            "tweetsDesired": limit_number,
             "includeUserId": True,
             "includeUserInfo": True,
             "minReplies": 0,

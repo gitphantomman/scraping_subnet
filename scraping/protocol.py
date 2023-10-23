@@ -45,7 +45,7 @@ class TwitterScrap(bt.Synapse):
     It is used to scrape data from Twitter.
     """
     # Required request input, filled by sending dendrite caller.
-    scrap_input: Optional[int] = None
+    scrap_input: Optional[Dict] = None
 
     # Optional request output, filled by receiving axon.
     scrap_output: Optional[List[Dict]] = None
