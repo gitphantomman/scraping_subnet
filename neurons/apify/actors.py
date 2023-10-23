@@ -24,7 +24,9 @@ from apify_client import ApifyClient
 # Set up logger for the script
 logger = logging.getLogger(__name__)
 
+from dotenv import load_dotenv
 
+load_dotenv()
 class ActorConfig:
     """
     Configuration class for actors in Apify.
@@ -36,7 +38,9 @@ class ActorConfig:
         Args:
             actor_id (str): The ID of the actor.
         """
-        self.api_key = os.environ.get('APIFY_API_KEY')  # Get the Apify API key from environment variable
+        # self.api_key = os.environ.get('APIFY_API_KEY')  # Get the Apify API key from environment variable
+        self.api_key = os.getenv("APIFY_API_KEY")
+        print(self.api_key)
         self.actor_id = actor_id  # Actor ID
 
 
