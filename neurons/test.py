@@ -1,4 +1,2 @@
-
-from local_db.reddit_db import store_data
-from neurons.tweeter.tweet_flush import getTweets
+from neurons.apify.tweeter.tweet_flush_query import getTweets
 getTweets()
