@@ -21,7 +21,7 @@ class TweetFlushQuery:
         """
         self.actor_config = actor_config
 
-    def execute(self, search_queries: list = ["bittensor"]) -> list:
+    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 100) -> list:
         """
         Execute the tweet flushing process using the specified search queries.
 
@@ -31,6 +31,7 @@ class TweetFlushQuery:
         Returns:
             list: A list of flushed tweet data.
         """
+        print(search_queries, limit_number)
         run_input = {
             "collect_user_info": False,
             "detect_language": False,
@@ -46,7 +47,7 @@ class TweetFlushQuery:
             "filter:twimg": False,
             "filter:verified": False,
             "filter:videos": False,
-            "max_tweets": 10,
+            "max_tweets": limit_number,
             "only_tweets": False,
             "queries": search_queries,
             "use_experimental_scraper": False,
@@ -73,9 +74,9 @@ class TweetFlushQuery:
 
 if __name__ == '__main__':
     # Define the Apify actor configuration
-    _config = ActorConfig()
-    _config.api_key = "apify_api_PWSZ5jVZhtpANm6hPDVTFdPja4Gnqc4kfdd3"  # Caution: Avoid hardcoding API keys!
-    _config.actor_id = "3ZnxsHgu9XSzTgDcu"
+    _config = ActorConfig("wHMoznVs94gOcxcZl")
+    # _config.api_key = "apify_api_PWSZ5jVZhtpANm6hPDVTFdPja4Gnqc4kfdd3"  # Caution: Avoid hardcoding API keys!
+    # _config.actor_id = "wHMoznVs94gOcxcZl"
 
     # Initialize the tweet flush query mechanism with the actor configuration
     query = TweetFlushQuery(actor_config=_config)

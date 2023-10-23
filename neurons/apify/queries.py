@@ -3,7 +3,9 @@ from enum import Enum
 from neurons.apify.actors import ActorConfig
 from neurons.apify.tweeter.tweet_flush_query import TweetFlushQuery
 from neurons.apify.tweeter.tweet_scraper_query import TweetScraperQuery
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class QueryType(Enum):
     """
@@ -46,7 +48,7 @@ def get_query(query_type: QueryType, query_provider: QueryProvider):
 
     # Construct the environment variable key to fetch the actor ID
     actor_id_key = f"{query_provider.value.upper()}_ACTOR_ID"
-    actor_id = os.environ.get(actor_id_key)
+    actor_id = os.getenv(actor_id_key)
 
     if actor_id is None:
         raise Exception(f"Environment variable {actor_id_key} not set")
