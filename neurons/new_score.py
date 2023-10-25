@@ -21,6 +21,10 @@ DEALINGS IN THE SOFTWARE.
 
 import torch
 import datetime
+from neurons.apify.queries import get_query, QueryType, QueryProvider
+import random
+
+twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLUSH)
 
 def calculateScore(responses = [], tag = 'tao'):
     """
@@ -43,6 +47,8 @@ def calculateScore(responses = [], tag = 'tao'):
     # Initialize time difference list. The length of time difference list is the same as the length of responses.
     time_diff_list = torch.zeros(len(responses))
     total_time_diff = 0
+    correct_score = 0
+    max_correct_score = 0
     max_time_diff = 0
     # Initialize accuracy list. The length of accuracy list is the same as the length of responses.
     accuracy_list = torch.zeros(len(responses))
@@ -51,6 +57,7 @@ def calculateScore(responses = [], tag = 'tao'):
     max_similar_count = 0
     # Initialize length list. The length score list is the same as the length of responses.
     length_list = torch.zeros(len(responses))
+    correct_list = torch.ones_like(len(responses))
     total_length = 0
     max_length = 0
 
@@ -65,17 +72,36 @@ def calculateScore(responses = [], tag = 'tao'):
             else:
                 id_counts[tweet_id] = 1
 
-
+    samples_for_compare = []
+    
+    if (len(responses) > 3):
+        # * Choose 3 random responses to compare and return their index. You can change the number of samples by changing k
+        compare_list = random.sample(list(range(len(responses))), k=3)
+    else:
+        compare_list = list(range(len(responses)))
     # Calculate score for each response
     for i, response in enumerate(responses):
         # initialize variables
         similarity_score = 0
         time_diff_score = 0
         total_length += len(response)
-
+        correct_score = 1
         # calculate max_length
         if len(response) > max_length:
             max_length = len(response)
+
+        # choose two itmems to compare
+        if (i in compare_list):
+            sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
+            sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
+            for sample_item in sample_items:
+                searched_item = twitter_query.searchByUrl([sample_item['url']])
+                if searched_item:
+                    if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
+                        correct_score += 1
+                else: 
+                    correct_score += 0
+            correct_score /= len(sample_items)
         # calculate scores
         for i_item, item in enumerate(response):
             # caluclate similarity score
@@ -92,20 +118,26 @@ def calculateScore(responses = [], tag = 'tao'):
             max_similar_count = similarity_score
         if max_time_diff < time_diff_score:
             max_time_diff = time_diff_score
+        if max_correct_score < correct_score:
+            max_correct_score = correct_score
 
         similarity_list[i] = similarity_score
         time_diff_list[i] = time_diff_score
         length_list[i] = len(response)
+        correct_list[i] = correct_score
+
+
+    
 
     similarity_list = (similarity_list + 1) / (max_similar_count + 1)
     time_diff_list = (time_diff_list + 1) / (max_time_diff + 1)
-    length_list = length_list / max_length
+    correct_list = (correct_list + 1) / (max_correct_score + 1)
+    length_list = (length_list + 1) / (max_length + 1)
 
-    print(f"similarity_list: {similarity_list}")
-    print(f"time_diff_list: {time_diff_list}")
-    print(f"length_list: {length_list}")
         
-    score_list = (similarity_list * 0.3  + time_diff_list * 0.2 + length_list * 0.5)
+    score_list = ((1 - similarity_list) * 0.15 + correct_score * 0.3  + (1 - time_diff_list) * 0.15 + length_list * 0.4)
+    # normalize score list
+    score_list = score_list / torch.sum(score_list)
     return score_list
         
 
