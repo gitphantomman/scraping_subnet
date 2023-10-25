@@ -21,6 +21,33 @@ class TweetFlushQuery:
         """
         self.actor_config = actor_config
 
+    def searchByUrl(self, urls: list = ["https://twitter.com/elonmusk/status/1384874438472844800"]):
+        """
+        Execute the tweet flushing process using the specified search queries.
+        """
+        run_input = {
+            "absolute_max_tweets": 1,
+            "filter:blue_verified": False,
+            "filter:has_engagement": False,
+            "filter:images": False,
+            "filter:media": False,
+            "filter:nativeretweets": False,
+            "filter:quote": False,
+            "filter:replies": False,
+            "filter:retweets": False,
+            "filter:safe": False,
+            "filter:twimg": False,
+            "filter:verified": False,
+            "filter:videos": False,
+            "only_tweets": False,
+            "tweet_urls": urls,
+            "use_experimental_scraper": False,
+            "max_tweets": 1,
+            "language": "any",
+            "user_info": "user info and replying info",
+            "max_attempts": 5
+            }
+        return self.map(run_actor(self.actor_config, run_input))
     def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
         Execute the tweet flushing process using the specified search queries.

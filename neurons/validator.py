@@ -213,14 +213,14 @@ def main( config ):
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : ["bittensor"]}), # Construct a scraping query.
+                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : ["bitcoin"]}), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
-                    timeout = 30
+                    timeout = 60
                 )              
                 if(len(responses) > 0):
                     for item in responses:
-                        bt.logging.info(f"✅ Length of Responses: {len(item)}")
+                        bt.logging.info(f"✅ Length of Response: {len(item)}")
                 
 
                 # Update score
@@ -376,7 +376,8 @@ def main( config ):
         except RuntimeError as e:
             bt.logging.error(e)
             traceback.print_exc()
-            
+        except Exception as e:
+            bt.logging.error(e)
         # If the user interrupts the program, gracefully exit.
         except KeyboardInterrupt:
             bt.logging.success("Keyboard interrupt detected. Exiting validator.")
