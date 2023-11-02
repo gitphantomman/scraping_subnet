@@ -29,45 +29,41 @@ class TweetScraperQuery:
             list: A list of scraped tweet data.
         """
         run_input = {
-            "searchQueries": search_queries,
-            "tweetsDesired": limit_number,
-            "includeUserId": True,
-            "includeUserInfo": True,
-            "minReplies": 0,
-            "minRetweets": 0,
-            "minLikes": 0,
-            "fromTheseAccounts": [],
-            "toTheseAccounts": [],
-            "mentioningTheseAccounts": [],
-            "nativeRetweets": False,
-            "media": False,
-            "images": False,
-            "videos": False,
-            "news": False,
-            "verified": False,
-            "nativeVideo": False,
-            "replies": False,
-            "links": False,
-            "safe": False,
-            "quote": False,
-            "proVideo": False,
-            "excludeNativeRetweets": False,
-            "excludeMedia": False,
-            "excludeImages": False,
-            "excludeVideos": False,
-            "excludeNews": False,
-            "excludeVerified": False,
-            "excludeNativeVideo": False,
-            "excludeReplies": False,
-            "excludeLinks": False,
-            "excludeSafe": False,
-            "excludeQuote": False,
-            "excludeProVideo": False,
+            "excludeImages": false,
+            "excludeLinks": false,
+            "excludeMedia": false,
+            "excludeNativeRetweets": false,
+            "excludeNativeVideo": false,
+            "excludeNews": false,
+            "excludeProVideo": false,
+            "excludeQuote": false,
+            "excludeReplies": false,
+            "excludeSafe": false,
+            "excludeVerified": false,
+            "excludeVideos": false,
+            "images": false,
+            "includeUserId": true,
+            "includeUserInfo": true,
             "language": "any",
+            "links": false,
+            "media": false,
+            "nativeRetweets": false,
+            "nativeVideo": false,
+            "news": false,
+            "proVideo": false,
             "proxyConfig": {
-                "useApifyProxy": True,
-                "apifyProxyGroups": ["RESIDENTIAL"],
-            }
+                "useApifyProxy": true,
+                "apifyProxyGroups": [
+                    "RESIDENTIAL"
+                ]
+            },
+            "quote": false,
+            "replies": false,
+            "safe": false,
+            "searchQueries": search_queries,
+            "tweetsDesired": 10,
+            "verified": false,
+            "videos": false
         }
         return self.map(run_actor(self.actor_config, run_input))
 
@@ -87,7 +83,7 @@ class TweetScraperQuery:
 
 if __name__ == '__main__':
     # Define the Apify actor configuration
-    _config = ActorConfig("u6ppkMWAx2E2MpEuF")
+    _config = ActorConfig("2s3kSMq7tpuC3bI6M")
 
     # Initialize the tweet scraper query mechanism with the actor configuration
     query = TweetScraperQuery(actor_config=_config)

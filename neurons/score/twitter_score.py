@@ -36,7 +36,8 @@ def calculateScore(responses = [], tag = 'tao'):
     Returns:
         list: The list of scores for each response.
     """
-    
+    # :TODO Tao based score calculation
+    # :TODO make variables for setting query type and provider
     # Check if responses is empty
     if len(responses) == 0:
         return []
@@ -57,7 +58,7 @@ def calculateScore(responses = [], tag = 'tao'):
     max_similar_count = 0
     # Initialize length list. The length score list is the same as the length of responses.
     length_list = torch.zeros(len(responses))
-    correct_list = torch.ones_like(len(responses))
+    correct_list = torch.ones(len(responses))
     total_length = 0
     max_length = 0
 
@@ -92,6 +93,7 @@ def calculateScore(responses = [], tag = 'tao'):
 
         # choose two itmems to compare
         if (i in compare_list):
+            correct_score = 0
             sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
             sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
             for sample_item in sample_items:
