@@ -78,7 +78,8 @@ class TweetScraperQuery:
         Returns:
             list: The mapped or transformed data.
         """
-        return input
+        filtered_input = [{'id': item['tweet_id'], 'url': item['url'], 'text': item['text'], 'likes': item['likes'], 'images': item['images'], 'timestamp': item['timestamp']} for item in input]
+        return filtered_input
 
 
 if __name__ == '__main__':

@@ -30,7 +30,7 @@ import scraping
 import json
 import score.reddit_score
 import score.twitter_score
-
+import storage.store
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
     """
@@ -70,6 +70,13 @@ def get_config():
 
 
 import random
+
+def random_line(a_file="keywords.txt"):
+    if not exists(a_file):
+        print(f"Keyword file not found at location: {a_file}")
+        quit()
+    lines = open(a_file).read().splitlines()
+    return random.choice(lines)
 
 def main( config ):
     """
@@ -195,16 +202,19 @@ def main( config ):
             # Broadcast a GET_DATA query to filtered miners on the network.
 
             # * every 10 minutes, query the miners for twitter data
-            if step % 2 == 1:
+            if step % 2 == 0:
                 bt.logging.info(f"\033[92m 𝕏 ⏩ Sending tweeter query. \033[0m")
+                search_key = random_line()
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : ["bitcoin"]}), # Construct a scraping query.
+                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
                     timeout = 60
-                )              
+                )          
+
+                print(responses)
                 if(len(responses) > 0):
                     for item in responses:
                         bt.logging.info(f"\033[92m 𝕏 ✅ Length of Twitter Response: {len(item)} \033[0m")
@@ -214,7 +224,7 @@ def main( config ):
                 new_scores = []
                 try:
                     if(len(responses) > 0 and responses is not None):
-                        new_scores = score.twitter_score.calculateScore(responses = responses, tag = "bitcoin")
+                        new_scores = score.twitter_score.calculateScore(responses = responses, tag = search_key)
                         # bt.logging.info(f"✅ new_scores: {new_scores}")
                 except Exception as e:
                     bt.logging.error(f"❌ Error in twitterScore: {e}")
@@ -222,6 +232,13 @@ def main( config ):
                     scores[dendrites_to_query[i]] = twitterAlpha * scores[dendrites_to_query[i]] + (1 - twitterAlpha) * score_i
                 bt.logging.info(f"\033[92m ✓ Updated Scores: {scores} \033[0m")
                 
+                try:
+                    if len(responses) > 0:
+                        storage.store.twitter_store(data = responses)
+                    else:
+                        bt.logging.warning("\033[91m ⚠ No twitter data found in responses \033[0m")
+                except Exception as e:
+                    bt.logging.error(f"❌ Error in store_Twitter: {e}")
                 # Store 
 
                 # # check if there is any data
@@ -274,12 +291,13 @@ def main( config ):
                     # set all nodes without ips set to 0
                     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             # Periodically update the weights on the Bittensor blockchain.
-            if step % 2 == 0:
+            if step % 2 == 1:
                 bt.logging.info(f"\033[92m ᕕ ⏩ Sending reddit query. \033[0m")
+                search_key = random_line()
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.RedditScrap(scrap_input = {"search_key" : ["bitcoin"]}), # Construct a scraping query.
+                    scraping.protocol.RedditScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True,
                     timeout = 30 
@@ -293,23 +311,20 @@ def main( config ):
                 new_scores = []
                 try:
                     if(len(responses) > 0 and responses is not None):
-                        new_scores = score.reddit_score.calculateScore(responses = responses, tag = "bitcoin")
+                        new_scores = score.reddit_score.calculateScore(responses = responses, tag = search_key)
                         # bt.logging.info(f"✅ new_scores: {new_scores}")
                 except Exception as e:
                     bt.logging.error(f"❌ Error in redditScore: {e}")
                 for i, score_i in enumerate(new_scores):
                     scores[dendrites_to_query[i]] = redditAlpha * scores[dendrites_to_query[i]] + (1 - redditAlpha) * score_i
                 bt.logging.info(f"\033[92m ✓ Updated Scores: {scores} \033[0m")
-            #     # Store into Wandb
-            #     # check if there is any data
-            #     try:
-            #         if len(responses) > 0:
-            #             # store data into wandb
-            #             store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['reddit'])
-            #         else:
-            #             print("No data found")
-            #     except Exception as e:
-            #         bt.logging.error(f"Error in store_Reddit_wandb: {e}")                
+                try:
+                    if len(responses) > 0:
+                        storage.store.reddit_store(data = responses)
+                    else:
+                        bt.logging.warning("\033[91m ⚠ No reddit data found in responses \033[0m")
+                except Exception as e:
+                    bt.logging.error(f"❌ Error in store_reddit: {e}")            
                 
                 # If the metagraph has changed, update the weights.
                 # Adjust the scores based on responses from miners.

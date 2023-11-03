@@ -26,8 +26,6 @@ import time
 import argparse
 import traceback
 import bittensor as bt
-import local_db.reddit_db as reddit_db
-import local_db.twitter_db as twitter_db
 import scraping
 from typing import Tuple
 import torch

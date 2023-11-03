@@ -1,36 +1,36 @@
 import boto3
-from botocore.client import Config
 import csv
-import io
-from pyathena import connect
-import pandas as pd
+import random
+import string
+import time
+from io import StringIO
 
-# Create a session with AWS
-session = boto3.Session(
-    aws_access_key_id='8FKV07PTHEVL1FNW2C3H',
-    aws_secret_access_key='j8zkapwEzabrDM9ghKnXD9znSZV8Ol8HuVvNbbaV',
-    region_name='us-central-1'
-)
-
-# Create a client with Wasabi endpoint
-s3 = session.client(
-    's3',
+s3 = boto3.resource('s3',
     endpoint_url='https://s3.us-central-1.wasabisys.com',
-    config=Config(signature_version='s3v4')
-)
+    aws_access_key_id='O98TI85AO7U2MLKKT1TT',
+    aws_secret_access_key='hNHIzr1NedzgfP8GiIHrHsaG779vg6pYvDZq1BcR')
 
-# Connect to Athena
-conn = connect(aws_access_key_id='8FKV07PTHEVL1FNW2C3H',
-               aws_secret_access_key='j8zkapwEzabrDM9ghKnXD9znSZV8Ol8HuVvNbbaV',
-               s3_staging_dir='s3://scrapingsubnetbucket/',
-               region_name='us-central-1')
+def generate_random_string(length=10):
+    return ''.join(random.choice(string.ascii_lowercase) for i in range(length))
 
-# Add a new row to the data
-new_row = ['18', 'slkdf', '46', 'sdfsd', '2909']
-query = f"INSERT INTO test VALUES {str(tuple(new_row))}"
+def generate_mock_data():
+    return {
+        'id': generate_random_string(),
+        'text': generate_random_string(),
+        'timestamp': time.time()
+    }
 
-# Execute the query
-pd.read_sql(query, conn)
+filename = generate_random_string() + '.csv'
 
-# Print the new data
-print(pd.read_sql('SELECT * FROM test', conn))
+csv_buffer = StringIO()
+fieldnames = ['id', 'text', 'timestamp']
+writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
+
+writer.writeheader()
+for _ in range(10):
+    data = generate_mock_data()
+    writer.writerow(data)
+
+s3.Bucket('scrapingsubnetbucket').put_object(Key=filename, Body=csv_buffer.getvalue())
+
+csv_buffer.close()
