@@ -26,7 +26,7 @@ class RedditScrap(bt.Synapse):
     It is used to scrape data from Reddit.
     """
     # Required request input, filled by sending dendrite caller.
-    scrap_input: Optional[int] = None
+    scrap_input: Optional[Dict] = None
 
     # Optional request output, filled by receiving axon.
     # TODO: Add error handling for when scrap_output is None

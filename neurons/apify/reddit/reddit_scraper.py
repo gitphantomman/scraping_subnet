@@ -4,9 +4,9 @@ from neurons.apify.actors import run_actor, ActorConfig
 # Setting up logger for debugging and information purposes
 logger = logging.getLogger(__name__)
 
-class TweetFlushQuery:
+class RedditScraper:
     """
-    A class designed to flush tweets based on specific search queries using the Apify platform.
+    A class designed to scrap reddit posts based on specific search queries using the Apify platform.
 
     Attributes:
         actor_config (ActorConfig): Configuration settings specific to the Apify actor.
@@ -26,28 +26,29 @@ class TweetFlushQuery:
         Execute the tweet flushing process using the specified search queries.
         """
         run_input = {
-            "absolute_max_tweets": 1,
-            "filter:blue_verified": False,
-            "filter:has_engagement": False,
-            "filter:images": False,
-            "filter:media": False,
-            "filter:nativeretweets": False,
-            "filter:quote": False,
-            "filter:replies": False,
-            "filter:retweets": False,
-            "filter:safe": False,
-            "filter:twimg": False,
-            "filter:verified": False,
-            "filter:videos": False,
-            "only_tweets": False,
-            "tweet_urls": urls,
-            "use_experimental_scraper": False,
-            "max_tweets": 1,
-            "language": "any",
-            "user_info": "user info and replying info",
-            "max_attempts": 5
+            "debugMode": False,
+            "maxComments": 1,
+            "maxCommunitiesCount": 1,
+            "maxItems": 1,
+            "maxPostCount": 1,
+            "maxUserCount": 1,
+            "proxy": {
+                "useApifyProxy": True
+            },
+            "scrollTimeout": 40,
+            "searchComments": False,
+            "searchCommunities": False,
+            "searchPosts": True,
+            "searchUsers": False,
+            "skipComments": False,
+            "startUrls": [
+                {
+                "url": urls[0]
+                }
+            ]
             }
         return self.map(run_actor(self.actor_config, run_input))
+    # ! Fix this fn
     def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
         Execute the tweet flushing process using the specified search queries.
@@ -60,28 +61,23 @@ class TweetFlushQuery:
         """
         print(search_queries, limit_number)
         run_input = {
-            "collect_user_info": False,
-            "detect_language": False,
-            "filter:blue_verified": False,
-            "filter:has_engagement": False,
-            "filter:images": False,
-            "filter:media": False,
-            "filter:nativeretweets": False,
-            "filter:quote": False,
-            "filter:replies": False,
-            "filter:retweets": False,
-            "filter:safe": False,
-            "filter:twimg": False,
-            "filter:verified": False,
-            "filter:videos": False,
-            "max_tweets": limit_number,
-            "only_tweets": False,
-            "queries": search_queries,
-            "use_experimental_scraper": False,
-            "language": "any",
-            "user_info": "user info and replying info",
-            "max_attempts": 5
-        }
+            "debugMode": False,
+            "maxComments": 10,
+            "maxCommunitiesCount": 2,
+            "maxItems": 10,
+            "maxPostCount": 10,
+            "maxUserCount": 2,
+            "proxy": {
+                "useApifyProxy": True
+            },
+            "scrollTimeout": 40,
+            "searchComments": False,
+            "searchCommunities": False,
+            "searchPosts": True,
+            "searchUsers": False,
+            "searches": search_queries,
+            "skipComments": False
+            }
 
         return self.map(run_actor(self.actor_config, run_input))
 
@@ -96,18 +92,18 @@ class TweetFlushQuery:
         Returns:
             list: The mapped or transformed data.
         """
-        filtered_input = [{'id': item['tweet_id'], 'url': item['url'], 'text': item['text'], 'likes': item['likes'], 'images': item['images'], 'timestamp': item['timestamp']} for item in input]
+        filtered_input = [{'id': item['id'], 'url': item['url'], 'text': item['body'], 'likes': item['upVotes'], 'dataType': item['dataType'], 'timestamp': item['createdAt']} for item in input]
         return filtered_input
 
 
 if __name__ == '__main__':
-    # Define the Apify actor configuration  ``
-    _config = ActorConfig("wHMoznVs94gOcxcZl")
+    # Define the Apify actor configuration
+    _config = ActorConfig("FgJtjDwJCLhRH9saM")
     # _config.api_key = "apify_api_PWSZ5jVZhtpANm6hPDVTFdPja4Gnqc4kfdd3"  # Caution: Avoid hardcoding API keys!
     # _config.actor_id = "wHMoznVs94gOcxcZl"
 
     # Initialize the tweet flush query mechanism with the actor configuration
-    query = TweetFlushQuery(actor_config=_config)
+    query = RedditScraperLite(actor_config=_config)
 
     # Execute the flush for the "bitcoin" search term
     data_set = query.execute(search_queries=["bitcoin"])

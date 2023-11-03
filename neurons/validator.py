@@ -26,12 +26,11 @@ import torch
 import argparse
 import traceback
 import bittensor as bt
-import storeWB
-import scoreModule
 import scraping
 import json
-from new_score import calculateScore
-
+import score.reddit_score
+import score.twitter_score
+import storage.store
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
     """
@@ -69,21 +68,15 @@ def get_config():
     # Return the parsed config.
     return config
 
-# Wandb: append data to reddit dataset
-def store_Reddit_wandb(all_data, username, projectName, run_id):
-    """
-    This function stores all data from reddit to wandb.
-    """
-    storeWB.store_reddit(all_data = all_data, username= username, projectName = projectName, run_id = run_id)
-
-# Wandb: append data to twitter dataset
-def store_Twitter_wandb(all_data, username, projectName, run_id):
-    """
-    This function stores all data from twitter to wandb.
-    """
-    storeWB.store_twitter(all_data = all_data, username= username, projectName = projectName, run_id = run_id)
 
 import random
+
+def random_line(a_file="keywords.txt"):
+    if not exists(a_file):
+        print(f"Keyword file not found at location: {a_file}")
+        quit()
+    lines = open(a_file).read().splitlines()
+    return random.choice(lines)
 
 def main( config ):
     """
@@ -160,7 +153,7 @@ def main( config ):
         # Per 10 blocks, sync the subtensor state with the blockchain.
         if step % 5 == 0:
             metagraph.sync(subtensor = subtensor)
-            bt.logging.info(f"Syncing metagraph with subtensor.")
+            bt.logging.info(f"🔄 Syncing metagraph with subtensor.")
 
         # If the metagraph has changed, update the weights.
         # Get the uids of all miners in the network.
@@ -209,32 +202,43 @@ def main( config ):
             # Broadcast a GET_DATA query to filtered miners on the network.
 
             # * every 10 minutes, query the miners for twitter data
-            if (step + 1) % 2 == 1:
+            if step % 2 == 0:
+                bt.logging.info(f"\033[92m 𝕏 ⏩ Sending tweeter query. \033[0m")
+                search_key = random_line()
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : ["bitcoin"]}), # Construct a scraping query.
+                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
                     timeout = 60
-                )              
+                )          
+
+                print(responses)
                 if(len(responses) > 0):
                     for item in responses:
-                        bt.logging.info(f"✅ Length of Response: {len(item)}")
+                        bt.logging.info(f"\033[92m 𝕏 ✅ Length of Twitter Response: {len(item)} \033[0m")
                 
 
                 # Update score
                 new_scores = []
                 try:
                     if(len(responses) > 0 and responses is not None):
-                        new_scores = calculateScore(responses = responses, tag = "bittensor")
-                        bt.logging.info(f"✅ new_scores: {new_scores}")
+                        new_scores = score.twitter_score.calculateScore(responses = responses, tag = search_key)
+                        # bt.logging.info(f"✅ new_scores: {new_scores}")
                 except Exception as e:
                     bt.logging.error(f"❌ Error in twitterScore: {e}")
                 for i, score_i in enumerate(new_scores):
                     scores[dendrites_to_query[i]] = twitterAlpha * scores[dendrites_to_query[i]] + (1 - twitterAlpha) * score_i
-                bt.logging.info(f"✅ Updated Scores: {scores}")
+                bt.logging.info(f"\033[92m ✓ Updated Scores: {scores} \033[0m")
                 
+                try:
+                    if len(responses) > 0:
+                        storage.store.twitter_store(data = responses)
+                    else:
+                        bt.logging.warning("\033[91m ⚠ No twitter data found in responses \033[0m")
+                except Exception as e:
+                    bt.logging.error(f"❌ Error in store_Twitter: {e}")
                 # Store 
 
                 # # check if there is any data
@@ -272,7 +276,7 @@ def main( config ):
                         weights = processed_weights, # Weights to set for the miners.
                     )
                     last_updated_block = current_block
-                    if result: bt.logging.success('Successfully set weights.')
+                    if result: bt.logging.success('✅ Successfully set weights.')
                     else: bt.logging.error('Failed to set weights.')
                 if last_reset_weights_block + 1800 < current_block:
 
@@ -287,85 +291,82 @@ def main( config ):
                     # set all nodes without ips set to 0
                     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             # Periodically update the weights on the Bittensor blockchain.
-            # if (step + 1) % 3 == 1:
-            #     responses = dendrite.query(
-            #         filtered_axons,
-            #         # Construct a scraping query.
-            #         scraping.protocol.RedditScrap(), # Construct a scraping query.
-            #         # All responses have the deserialize function called on them before returning.
-            #         deserialize = True,
-            #         timeout = 30 
-            #     )
+            if step % 2 == 1:
+                bt.logging.info(f"\033[92m ᕕ ⏩ Sending reddit query. \033[0m")
+                search_key = random_line()
+                responses = dendrite.query(
+                    filtered_axons,
+                    # Construct a scraping query.
+                    scraping.protocol.RedditScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
+                    # All responses have the deserialize function called on them before returning.
+                    deserialize = True,
+                    timeout = 30 
+                )
+                if(len(responses) > 0):
+                    for item in responses:
+                        bt.logging.info(f"\033[92m ᕕ ✅ Length of Reddit Response: {len(item)} \033[0m")
+                        bt.logging.info(item)
 
-            #     # Update score
-            #     try:
-            #         for i, resp_i in enumerate(responses):
-            #         # Initialize the score of each miner.
-            #             score = 0
-            #             # If the miner did not respond, set its score to 0.
-            #             if resp_i != None:
-            #                 # Evaluate how is the miner's performance.
-            #                 score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['reddit'])
-            #                 # Update the global score of the miner.
-            #                 # This score contributes to the miner's weight in the network.
-            #                 # A higher weight means that the miner has been consistently responding correctly.
-            #             scores[dendrites_to_query[i]] = redditAlpha * scores[dendrites_to_query[i]] + (1 - redditAlpha) * score
-            #     except Exception as e:
-            #         bt.logging.error(f"Error in redditScore: {e}")
-
-            #     bt.logging.info(f"Scores: {scores}")
-            #     # Store into Wandb
-            #     # check if there is any data
-            #     try:
-            #         if len(responses) > 0:
-            #             # store data into wandb
-            #             store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['reddit'])
-            #         else:
-            #             print("No data found")
-            #     except Exception as e:
-            #         bt.logging.error(f"Error in store_Reddit_wandb: {e}")                
+                # Update score
+                new_scores = []
+                try:
+                    if(len(responses) > 0 and responses is not None):
+                        new_scores = score.reddit_score.calculateScore(responses = responses, tag = search_key)
+                        # bt.logging.info(f"✅ new_scores: {new_scores}")
+                except Exception as e:
+                    bt.logging.error(f"❌ Error in redditScore: {e}")
+                for i, score_i in enumerate(new_scores):
+                    scores[dendrites_to_query[i]] = redditAlpha * scores[dendrites_to_query[i]] + (1 - redditAlpha) * score_i
+                bt.logging.info(f"\033[92m ✓ Updated Scores: {scores} \033[0m")
+                try:
+                    if len(responses) > 0:
+                        storage.store.reddit_store(data = responses)
+                    else:
+                        bt.logging.warning("\033[91m ⚠ No reddit data found in responses \033[0m")
+                except Exception as e:
+                    bt.logging.error(f"❌ Error in store_reddit: {e}")            
                 
-            #     # If the metagraph has changed, update the weights.
-            #     # Adjust the scores based on responses from miners.
-            #     # weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
-            #     current_block = subtensor.block
-            #     if current_block - last_updated_block > 100:
+                # If the metagraph has changed, update the weights.
+                # Adjust the scores based on responses from miners.
+                # weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
+                current_block = subtensor.block
+                if current_block - last_updated_block > 100:
                     
-            #         weights = scores / torch.sum(scores)
-            #         bt.logging.info(f"Setting weights: {weights}")
-            #         # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
-            #         (
-            #             processed_uids,
-            #             processed_weights,
-            #         ) = bt.utils.weight_utils.process_weights_for_netuid(
-            #             uids=metagraph.uids,
-            #             weights=weights,
-            #             netuid=config.netuid,
-            #             subtensor=subtensor
-            #         )
-            #         bt.logging.info(f"Processed weights: {processed_weights}")
-            #         bt.logging.info(f"Processed uids: {processed_uids}")
-            #         result = subtensor.set_weights(
-            #             netuid = config.netuid, # Subnet to set weights on.
-            #             wallet = wallet, # Wallet to sign set weights using hotkey.
-            #             uids = processed_uids, # Uids of the miners to set weights for.
-            #             weights = processed_weights, # Weights to set for the miners.
-            #         )
-            #         last_updated_block = current_block
-            #         if result: bt.logging.success('Successfully set weights.')
-            #         else: bt.logging.error('Failed to set weights.')
-            #     if last_reset_weights_block + 1800 < current_block:
+                    weights = scores / torch.sum(scores)
+                    bt.logging.info(f"Setting weights: {weights}")
+                    # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
+                    (
+                        processed_uids,
+                        processed_weights,
+                    ) = bt.utils.weight_utils.process_weights_for_netuid(
+                        uids=metagraph.uids,
+                        weights=weights,
+                        netuid=config.netuid,
+                        subtensor=subtensor
+                    )
+                    bt.logging.info(f"Processed weights: {processed_weights}")
+                    bt.logging.info(f"Processed uids: {processed_uids}")
+                    result = subtensor.set_weights(
+                        netuid = config.netuid, # Subnet to set weights on.
+                        wallet = wallet, # Wallet to sign set weights using hotkey.
+                        uids = processed_uids, # Uids of the miners to set weights for.
+                        weights = processed_weights, # Weights to set for the miners.
+                    )
+                    last_updated_block = current_block
+                    if result: bt.logging.success('✅ Successfully set weights.')
+                    else: bt.logging.error('Failed to set weights.')
+                if last_reset_weights_block + 1800 < current_block:
 
-            #         bt.logging.trace(f"Resetting weights")
-            #         scores = torch.ones_like( metagraph.uids , dtype = torch.float32 )
-            #         last_reset_weights_block = current_block
-            #         # scores = scores * metagraph.last_update > current_block - 600
+                    bt.logging.trace(f"Resetting weights")
+                    scores = torch.ones_like( metagraph.uids , dtype = torch.float32 )
+                    last_reset_weights_block = current_block
+                    # scores = scores * metagraph.last_update > current_block - 600
 
-            #         # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
-            #         scores = scores * (metagraph.total_stake < 1.024e3) 
+                    # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
+                    scores = scores * (metagraph.total_stake < 1.024e3) 
 
-            #         # set all nodes without ips set to 0
-            #         scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
+                    # set all nodes without ips set to 0
+                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             step += 1
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)

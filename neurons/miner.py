@@ -26,8 +26,6 @@ import time
 import argparse
 import traceback
 import bittensor as bt
-import local_db.reddit_db as reddit_db
-import local_db.twitter_db as twitter_db
 import scraping
 from typing import Tuple
 import torch
@@ -78,6 +76,7 @@ def main( config ):
     It sets up the necessary Bittensor objects, attaches the necessary functions to the axon, and starts the main loop.
     """
     twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLUSH)
+    reddit_query = get_query(QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE)
     # Activating Bittensor's logging with the set configurations.
     bt.logging(config=config, logging_dir=config.full_path)
     bt.logging.info(f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
@@ -186,7 +185,7 @@ def main( config ):
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
         tweets = twitter_query.execute(synapse.scrap_input["search_key"])
         synapse.scrap_output = tweets
-        bt.logging.info(f"✅ success: number of response data: {len(synapse.scrap_output)} \n")
+        bt.logging.info(f"✅ success: number of twitter response data: {len(synapse.scrap_output)} \n")
         return synapse
     
     def redditScrap( synapse: scraping.protocol.RedditScrap) -> scraping.protocol.RedditScrap: 
@@ -196,9 +195,9 @@ def main( config ):
         """
         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
         # Fetch latest N posts from miner's local database.
-        fetched_data = reddit_db.fetch_latest_posts(500)
-        synapse.scrap_output = fetched_data
-        bt.logging.info(f"number of response data: {len(synapse.scrap_output)} \n")
+        posts = reddit_query.execute(synapse.scrap_input["search_key"])
+        synapse.scrap_output = posts
+        bt.logging.info(f"✅ success: number of reddit response data: {len(synapse.scrap_output)} \n")
         return synapse
 
     # Build and link miner functions to the axon.

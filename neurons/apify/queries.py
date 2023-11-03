@@ -3,6 +3,8 @@ from enum import Enum
 from neurons.apify.actors import ActorConfig
 from neurons.apify.tweeter.tweet_flush_query import TweetFlushQuery
 from neurons.apify.tweeter.tweet_scraper_query import TweetScraperQuery
+from neurons.apify.reddit.reddit_scraper_lite import RedditScraperLite
+from neurons.apify.reddit.reddit_scraper import RedditScraper
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,12 +23,16 @@ class QueryProvider(Enum):
     """
     TWEET_SCRAPER = "apify_tweet_scraper"
     TWEET_FLUSH = "apify_tweet_flush"
+    REDDIT_SCRAPER_LITE = "apify_reddit_scraper_lite"
+    REDDIT_SCRAPER = "apify_reddit_scraper"
 
 
 # Mapping between query types and their respective classes
 QUERY_MAP = {
     (QueryType.TWITTER, QueryProvider.TWEET_SCRAPER): TweetScraperQuery,
-    (QueryType.TWITTER, QueryProvider.TWEET_FLUSH): TweetFlushQuery
+    (QueryType.TWITTER, QueryProvider.TWEET_FLUSH): TweetFlushQuery,
+    (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE): RedditScraperLite,
+    (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER): RedditScraper
 }
 
 
@@ -64,5 +70,3 @@ def get_query(query_type: QueryType, query_provider: QueryProvider):
     else:
         raise Exception("Invalid query type or query provider")
 
-# Usage example:
-# query_instance = get_query(QueryType.TWITTER, QueryProvider.TWEET_SCRAPER)
