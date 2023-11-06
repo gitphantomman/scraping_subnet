@@ -40,7 +40,6 @@ class ActorConfig:
         """
         # self.api_key = os.environ.get('APIFY_API_KEY')  # Get the Apify API key from environment variable
         self.api_key = os.getenv("APIFY_API_KEY")
-        print(self.api_key)
         self.actor_id = actor_id  # Actor ID
 
 

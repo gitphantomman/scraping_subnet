@@ -48,7 +48,6 @@ class RedditScraper:
             ]
             }
         return self.map(run_actor(self.actor_config, run_input))
-    # ! Fix this fn
     def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
         Execute the tweet flushing process using the specified search queries.
@@ -59,7 +58,6 @@ class RedditScraper:
         Returns:
             list: A list of flushed tweet data.
         """
-        print(search_queries, limit_number)
         run_input = {
             "debugMode": False,
             "maxComments": 10,

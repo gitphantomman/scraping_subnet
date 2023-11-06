@@ -23,7 +23,6 @@ import torch
 import datetime
 from neurons.apify.queries import get_query, QueryType, QueryProvider
 import random
-import pytz
 from dateutil.parser import parse
 
 reddit_query = get_query(QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE)
@@ -38,8 +37,6 @@ def calculateScore(responses = [], tag = 'tao'):
     Returns:
         list: The list of scores for each response.
     """
-    # :TODO Tao based score calculation
-    # :TODO make variables for setting query type and provider
     # Check if responses is empty
     if len(responses) == 0:
         return []
@@ -49,7 +46,6 @@ def calculateScore(responses = [], tag = 'tao'):
     score_list = torch.zeros(len(responses))
     # Initialize time difference list. The length of time difference list is the same as the length of responses.
     time_diff_list = torch.zeros(len(responses))
-    total_time_diff = 0
     correct_score = 0
     max_correct_score = 0
     max_time_diff = 0
@@ -64,10 +60,15 @@ def calculateScore(responses = [], tag = 'tao'):
     total_length = 0
     max_length = 0
 
-    total_similarity_score = 0
+    max_correct_search = 0
+    correct_search_result_list = torch.zeros(len(responses))
+
     # Count the number of occurrences of each ID
     id_counts = {}
-    for response in responses:
+    for i, response in enumerate(responses):
+        if response == None:
+            responses[i] = []
+            response = []
         for reddit in response:
             reddit_id = reddit['id']
             if reddit_id in id_counts:
@@ -77,7 +78,7 @@ def calculateScore(responses = [], tag = 'tao'):
 
     samples_for_compare = []
     
-    if (len(responses) > 3):
+    if (len(responses) > 5):
         # * Choose 3 random responses to compare and return their index. You can change the number of samples by changing k
         compare_list = random.sample(list(range(len(responses))), k=3)
     else:
@@ -87,6 +88,7 @@ def calculateScore(responses = [], tag = 'tao'):
         # initialize variables
         similarity_score = 0
         time_diff_score = 0
+        correct_search_result = 0
         total_length += len(response)
         correct_score = 1
         # calculate max_length
@@ -108,6 +110,8 @@ def calculateScore(responses = [], tag = 'tao'):
             correct_score /= len(sample_items)
         # calculate scores
         for i_item, item in enumerate(response):
+            if tag in item['text']:
+                correct_search_result += 1
             # caluclate similarity score
             similarity_score += (id_counts[item['id']] - 1)
             # calculate time difference score
@@ -116,9 +120,10 @@ def calculateScore(responses = [], tag = 'tao'):
             date_object = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
             time_diff = datetime.datetime.now() - date_object
             time_diff_score += time_diff.seconds
+
+
             
-        total_similarity_score += similarity_score
-        total_time_diff += time_diff_score
+  
 
         if max_similar_count < similarity_score:
             max_similar_count = similarity_score
@@ -126,11 +131,14 @@ def calculateScore(responses = [], tag = 'tao'):
             max_time_diff = time_diff_score
         if max_correct_score < correct_score:
             max_correct_score = correct_score
+        if max_correct_search < correct_search_result:
+            max_correct_search = correct_search_result
 
         similarity_list[i] = similarity_score
         time_diff_list[i] = time_diff_score
         length_list[i] = len(response)
         correct_list[i] = correct_score
+        correct_search_result_list[i] = correct_search_result
 
 
     
@@ -139,9 +147,16 @@ def calculateScore(responses = [], tag = 'tao'):
     time_diff_list = (time_diff_list + 1) / (max_time_diff + 1)
     correct_list = (correct_list + 1) / (max_correct_score + 1)
     length_list = (length_list + 1) / (max_length + 1)
+    correct_search_result_list = (correct_search_result_list + 1) / (max_correct_search + 1)
 
         
-    score_list = ((1 - similarity_list) * 0.15 + correct_score * 0.3  + (1 - time_diff_list) * 0.15 + length_list * 0.4)
+    score_list = ((1 - similarity_list) * 0.3  + (1 - time_diff_list) * 0.2 + correct_search_result_list * 0.3 + length_list * 0.2)
+    for i, correct_list_item in enumerate(correct_list):
+        if correct_list_item < 1:
+            score_list[i] = 0
+    for i, response in enumerate(responses):
+        if response == None or response == []:
+            score_list[i] = 0
     # normalize score list
     score_list = score_list / torch.sum(score_list)
     return score_list

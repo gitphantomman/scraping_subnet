@@ -1,11 +1,8 @@
-git+https://github.com/opentensor/bittensor.git@master
 torch
-praw
 python-dotenv
 SQLAlchemy
-tweepy
 pandas
-wandb
 requests
 setuptools
 apify_client
+boto3
