@@ -82,10 +82,10 @@ APIFY_REDDIT_SCRAPER_ACTOR_ID=FgJtjDwJCLhRH9saM
 
 # Validator Must
 
-WASABI_ENDPOINT_URL=   
+WASABI_ENDPOINT_URL='https://s3.us-central-1.wasabisys.com'
 
 # This should be from owner. Please dm to gitphantom
-WASABI_ACCESS_KEY_ID='https://s3.us-central-1.wasabisys.com'
+WASABI_ACCESS_KEY_ID=
 WASABI_ACCESS_KEY=
 INDEXING_API_KEY=
 
