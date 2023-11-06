@@ -21,8 +21,13 @@ DEALINGS IN THE SOFTWARE.
 
 import torch
 import datetime
+from neurons.apify.queries import get_query, QueryType, QueryProvider
+import random
+from dateutil.parser import parse
 
-def calculateScore(responses = [[{'id': '3', 'text': 'This is first tweet.', 'created_at': '2023-10-18 14:17:48'}, {'id': '4', 'text': 'This is second tweet', 'created_at': '2023-10-17 09:55:38'}], [{'id': '4', 'text': 'This is second tweet', 'created_at': '2023-10-18 09:55:38'}, {'id': '5', 'text': 'This is last tweet', 'created_at': '2023-10-16 09:55:38'}]], tag = 'tao'):
+reddit_query = get_query(QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE)
+
+def calculateScore(responses = [], tag = 'tao'):
     """
     This function calculates the score of responses.
     The score is calculated by the degree of similarity between responses, accuracy and time difference.
@@ -32,7 +37,6 @@ def calculateScore(responses = [[{'id': '3', 'text': 'This is first tweet.', 'cr
     Returns:
         list: The list of scores for each response.
     """
-    
     # Check if responses is empty
     if len(responses) == 0:
         return []
@@ -42,7 +46,8 @@ def calculateScore(responses = [[{'id': '3', 'text': 'This is first tweet.', 'cr
     score_list = torch.zeros(len(responses))
     # Initialize time difference list. The length of time difference list is the same as the length of responses.
     time_diff_list = torch.zeros(len(responses))
-    total_time_diff = 0
+    correct_score = 0
+    max_correct_score = 0
     max_time_diff = 0
     # Initialize accuracy list. The length of accuracy list is the same as the length of responses.
     accuracy_list = torch.zeros(len(responses))
@@ -51,65 +56,112 @@ def calculateScore(responses = [[{'id': '3', 'text': 'This is first tweet.', 'cr
     max_similar_count = 0
     # Initialize length list. The length score list is the same as the length of responses.
     length_list = torch.zeros(len(responses))
+    correct_list = torch.ones(len(responses))
     total_length = 0
     max_length = 0
 
-    total_similarity_score = 0
+    max_correct_search = 0
+    correct_search_result_list = torch.zeros(len(responses))
+
     # Count the number of occurrences of each ID
     id_counts = {}
-    for response in responses:
-        for tweet in response:
-            tweet_id = tweet['id']
-            if tweet_id in id_counts:
-                id_counts[tweet_id] += 1
+    for i, response in enumerate(responses):
+        if response == None:
+            responses[i] = []
+            response = []
+        for reddit in response:
+            reddit_id = reddit['id']
+            if reddit_id in id_counts:
+                id_counts[reddit_id] += 1
             else:
-                id_counts[tweet_id] = 1
+                id_counts[reddit_id] = 1
 
-
+    samples_for_compare = []
+    
+    if (len(responses) > 5):
+        # * Choose 3 random responses to compare and return their index. You can change the number of samples by changing k
+        compare_list = random.sample(list(range(len(responses))), k=3)
+    else:
+        compare_list = list(range(len(responses)))
     # Calculate score for each response
     for i, response in enumerate(responses):
         # initialize variables
         similarity_score = 0
         time_diff_score = 0
+        correct_search_result = 0
         total_length += len(response)
-
+        correct_score = 1
         # calculate max_length
         if len(response) > max_length:
             max_length = len(response)
+
+        # choose two itmems to compare
+        if (i in compare_list):
+            correct_score = 0
+            sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
+            sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
+            for sample_item in sample_items:
+                searched_item = reddit_query.searchByUrl([sample_item['url']])
+                if searched_item:
+                    if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
+                        correct_score += 1
+                else: 
+                    correct_score += 0
+            correct_score /= len(sample_items)
         # calculate scores
         for i_item, item in enumerate(response):
+            if tag in item['text']:
+                correct_search_result += 1
             # caluclate similarity score
             similarity_score += (id_counts[item['id']] - 1)
             # calculate time difference score
-            date_object = datetime.datetime.strptime(item['created_at'], '%Y-%m-%d %H:%M:%S')
+            date_temp = parse(item['timestamp'])
+            date_string = date_temp.strftime('%Y-%m-%d %H:%M:%S+00:00')
+            date_object = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
             time_diff = datetime.datetime.now() - date_object
             time_diff_score += time_diff.seconds
+
+
             
-        total_similarity_score += similarity_score
-        total_time_diff += time_diff_score
+  
 
         if max_similar_count < similarity_score:
             max_similar_count = similarity_score
         if max_time_diff < time_diff_score:
             max_time_diff = time_diff_score
+        if max_correct_score < correct_score:
+            max_correct_score = correct_score
+        if max_correct_search < correct_search_result:
+            max_correct_search = correct_search_result
 
         similarity_list[i] = similarity_score
         time_diff_list[i] = time_diff_score
         length_list[i] = len(response)
+        correct_list[i] = correct_score
+        correct_search_result_list[i] = correct_search_result
+
+
+    
 
     similarity_list = (similarity_list + 1) / (max_similar_count + 1)
     time_diff_list = (time_diff_list + 1) / (max_time_diff + 1)
-    length_list = length_list / max_length
+    correct_list = (correct_list + 1) / (max_correct_score + 1)
+    length_list = (length_list + 1) / (max_length + 1)
+    correct_search_result_list = (correct_search_result_list + 1) / (max_correct_search + 1)
 
-    print(f"similarity_list: {similarity_list}")
-    print(f"time_diff_list: {time_diff_list}")
-    print(f"length_list: {length_list}")
         
-    score_list = (similarity_list * 0.3  + time_diff_list * 0.2 + length_list * 0.5)
-    print(score_list)
+    score_list = ((1 - similarity_list) * 0.3  + (1 - time_diff_list) * 0.2 + correct_search_result_list * 0.3 + length_list * 0.2)
+    for i, correct_list_item in enumerate(correct_list):
+        if correct_list_item < 1:
+            score_list[i] = 0
+    for i, response in enumerate(responses):
+        if response == None or response == []:
+            score_list[i] = 0
+    # normalize score list
+    score_list = score_list / torch.sum(score_list)
+    return score_list
         
 
 
-calculateScore()
     
 

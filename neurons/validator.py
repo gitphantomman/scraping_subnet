@@ -26,12 +26,11 @@ import torch
 import argparse
 import traceback
 import bittensor as bt
-import storeWB
-import scoreModule
 import scraping
 import json
-import wandb
-
+import score.reddit_score
+import score.twitter_score
+import storage.store
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
     """
@@ -39,11 +38,7 @@ def get_config():
     """
     parser = argparse.ArgumentParser()
     
-    # TODO: Validate the wandb run id and project name
-    # Adds wandb arguments for storing
-    parser.add_argument('--wandb.username', default = 'aureliojafer', help = 'Adds a wandb username to store data')
-    parser.add_argument('--wandb.project', default = 'scraping_subnet-neurons', help = 'Adds a wandb project name to store')
-    parser.add_argument('--wandb.override_config', default = False, action = 'store_true', help = 'Overrides the wandb config file with command line arguments')
+
 
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
@@ -73,21 +68,15 @@ def get_config():
     # Return the parsed config.
     return config
 
-# Wandb: append data to reddit dataset
-def store_Reddit_wandb(all_data, username, projectName, run_id):
-    """
-    This function stores all data from reddit to wandb.
-    """
-    storeWB.store_reddit(all_data = all_data, username= username, projectName = projectName, run_id = run_id)
-
-# Wandb: append data to twitter dataset
-def store_Twitter_wandb(all_data, username, projectName, run_id):
-    """
-    This function stores all data from twitter to wandb.
-    """
-    storeWB.store_twitter(all_data = all_data, username= username, projectName = projectName, run_id = run_id)
 
 import random
+
+def random_line(a_file="keywords.txt"):
+    if not os.path.exists(a_file):
+        print(f"Keyword file not found at location: {a_file}")
+        quit()
+    lines = open(a_file).read().splitlines()
+    return random.choice(lines)
 
 def main( config ):
     """
@@ -130,8 +119,8 @@ def main( config ):
     bt.logging.info("Building validation weights.")
 
     # Initialize alpha for reddit and twitter
-    redditAlpha = 0.9
-    twitterAlpha = 0.8
+    redditAlpha = 0.7
+    twitterAlpha = 0.7
 
     # Initialize weights for each miner to 1.
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
@@ -156,36 +145,7 @@ def main( config ):
     last_updated_block = curr_block - (curr_block % 100)
     last_reset_weights_block = curr_block
 
-    # Initialize the wandb_params dictionary
-    wandb_params = {}
-
-    # Check if the wandb_config.json file exists
-    if os.path.exists('wandb_config.json'):
-        with open('wandb_config.json', 'r') as f:
-            wandb_params = json.load(f)
-    else:
-        # Set default values if the file does not exist
-        wandb_params['username'] = config.wandb.username
-        wandb_params['project'] = config.wandb.project
-
-    # Function to initialize wandb runs and get their IDs
-    def init_wandb_run(run_name):
-        run = wandb.init(project=config.wandb.project, resume="allow", name=run_name)
-        run_id = run.id
-        run.finish()
-        return run_id
-
-    # If the file doesn't exist or if override is set, initialize runs and get new IDs
-    if not os.path.exists('wandb_config.json') or config.wandb.override_config:
-        wandb_params['twitter'] = init_wandb_run("twitter")
-        wandb_params['reddit'] = init_wandb_run("reddit")
-
-        # Save the updated wandb_params to wandb_config.json
-        with open('wandb_config.json', 'w') as f:
-            json.dump(wandb_params, f)
-
-    # Log the wandb_params
-    bt.logging.info(f"wandb_params: {wandb_params}")
+    
     
 
     # Main loop
@@ -193,12 +153,11 @@ def main( config ):
         # Per 10 blocks, sync the subtensor state with the blockchain.
         if step % 5 == 0:
             metagraph.sync(subtensor = subtensor)
-            bt.logging.info(f"Syncing metagraph with subtensor.")
+            bt.logging.info(f"🔄 Syncing metagraph with subtensor.")
 
         # If the metagraph has changed, update the weights.
         # Get the uids of all miners in the network.
         uids = metagraph.uids.tolist()
-
         # If there are more uids than scores, add more weights.
         if len(uids) > len(scores):
             bt.logging.trace("Adding more weights")
@@ -234,6 +193,7 @@ def main( config ):
         dendrites_to_query = random.sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
         bt.logging.info(f"dendrites_to_query:{dendrites_to_query}")
             
+        
         # every 2 minutes, query the miners
         try:
             # Filter metagraph.axons by indices saved in dendrites_to_query list
@@ -242,45 +202,40 @@ def main( config ):
             # Broadcast a GET_DATA query to filtered miners on the network.
 
             # * every 10 minutes, query the miners for twitter data
-            if (step + 1) % 5 == 0:
+            if step % 2 == 0:
+                bt.logging.info(f"\033[92m 𝕏 ⏩ Sending tweeter query. \033[0m")
+                search_key = random_line()
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.TwitterScrap(), # Construct a scraping query.
+                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
-                    timeout = 30
-                )                
+                    timeout = 60
+                )          
 
-                
 
                 # Update score
+                new_scores = []
                 try:
-                    for i, resp_i in enumerate(responses):
-                    # Initialize the score of each miner.
-                        score = 0
-                        # If the miner did not respond, set its score to 0.
-                        if resp_i != None:
-                            # Evaluate how is the miner's performance.
-                            score = scoreModule.twitterScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['twitter'])
-                            # Update the global score of the miner.
-                            # This score contributes to the miner's weight in the network.
-                            # A higher weight means that the miner has been consistently responding correctly.
-                        scores[dendrites_to_query[i]] = twitterAlpha * scores[dendrites_to_query[i]] + (1 - twitterAlpha) * score 
+                    if(len(responses) > 0 and responses is not None):
+                        new_scores = score.twitter_score.calculateScore(responses = responses, tag = search_key)
+                        # bt.logging.info(f"✅ new_scores: {new_scores}")
                 except Exception as e:
-                    bt.logging.error(f"Error in twitterScore: {e}")
-                        
-                bt.logging.info(f"Scores: {scores}")
-                # Store into Wandb
-                # check if there is any data
+                    bt.logging.error(f"❌ Error in twitterScore: {e}")
+                for i, score_i in enumerate(new_scores):
+                    scores[dendrites_to_query[i]] = twitterAlpha * scores[dendrites_to_query[i]] + (1 - twitterAlpha) * score_i
+                bt.logging.info(f"\033[92m ✓ Updated Scores: {scores} \033[0m")
+                
                 try:
                     if len(responses) > 0:
-                        # store data into wandb
-                        store_Twitter_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['twitter'])
+                        indexing_result = storage.store.twitter_store(data = responses, search_keys=[search_key])
+                        bt.logging.info(f"\033[92m saving index info: {indexing_result} \033[0m")
                     else:
-                        bt.logging.warning("No twitter data found in responses")
+                        bt.logging.warning("\033[91m ⚠ No twitter data found in responses \033[0m")
                 except Exception as e:
-                    bt.logging.error(f"Error in store_Twitter_wandb: {e}")
+                    bt.logging.error(f"❌ Error in store_Twitter: {e}")
+
                     
                         
                 current_block = subtensor.block
@@ -307,7 +262,7 @@ def main( config ):
                         weights = processed_weights, # Weights to set for the miners.
                     )
                     last_updated_block = current_block
-                    if result: bt.logging.success('Successfully set weights.')
+                    if result: bt.logging.success('✅ Successfully set weights.')
                     else: bt.logging.error('Failed to set weights.')
                 if last_reset_weights_block + 1800 < current_block:
 
@@ -322,43 +277,37 @@ def main( config ):
                     # set all nodes without ips set to 0
                     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 3 == 1:
+            if step % 2 == 1:
+                bt.logging.info(f"\033[92m ᕕ ⏩ Sending reddit query. \033[0m")
+                search_key = random_line()
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.RedditScrap(), # Construct a scraping query.
+                    scraping.protocol.RedditScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True,
-                    timeout = 30 
+                    timeout = 60 
                 )
 
                 # Update score
+                new_scores = []
                 try:
-                    for i, resp_i in enumerate(responses):
-                    # Initialize the score of each miner.
-                        score = 0
-                        # If the miner did not respond, set its score to 0.
-                        if resp_i != None:
-                            # Evaluate how is the miner's performance.
-                            score = scoreModule.redditScore(resp_i, username= config.wandb.username, project = config.wandb.project, run_id = wandb_params['reddit'])
-                            # Update the global score of the miner.
-                            # This score contributes to the miner's weight in the network.
-                            # A higher weight means that the miner has been consistently responding correctly.
-                        scores[dendrites_to_query[i]] = redditAlpha * scores[dendrites_to_query[i]] + (1 - redditAlpha) * score
+                    if(len(responses) > 0 and responses is not None):
+                        new_scores = score.reddit_score.calculateScore(responses = responses, tag = search_key)
+                        # bt.logging.info(f"✅ new_scores: {new_scores}")
                 except Exception as e:
-                    bt.logging.error(f"Error in redditScore: {e}")
-
-                bt.logging.info(f"Scores: {scores}")
-                # Store into Wandb
-                # check if there is any data
+                    bt.logging.error(f"❌ Error in redditScore: {e}")
+                for i, score_i in enumerate(new_scores):
+                    scores[dendrites_to_query[i]] = redditAlpha * scores[dendrites_to_query[i]] + (1 - redditAlpha) * score_i
+                bt.logging.info(f"\033[92m ✓ Updated Scores: {scores} \033[0m")
                 try:
                     if len(responses) > 0:
-                        # store data into wandb
-                        store_Reddit_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['reddit'])
+                        indexing_result = storage.store.reddit_store(data = responses, search_keys=[search_key])
+                        bt.logging.info(f"\033[92m saving index info: {indexing_result} \033[0m")
                     else:
-                        print("No data found")
+                        bt.logging.warning("\033[91m ⚠ No reddit data found in responses \033[0m")
                 except Exception as e:
-                    bt.logging.error(f"Error in store_Reddit_wandb: {e}")                
+                    bt.logging.error(f"❌ Error in store_reddit: {e}")            
                 
                 # If the metagraph has changed, update the weights.
                 # Adjust the scores based on responses from miners.
@@ -387,7 +336,7 @@ def main( config ):
                         weights = processed_weights, # Weights to set for the miners.
                     )
                     last_updated_block = current_block
-                    if result: bt.logging.success('Successfully set weights.')
+                    if result: bt.logging.success('✅ Successfully set weights.')
                     else: bt.logging.error('Failed to set weights.')
                 if last_reset_weights_block + 1800 < current_block:
 
@@ -411,7 +360,9 @@ def main( config ):
         except RuntimeError as e:
             bt.logging.error(e)
             traceback.print_exc()
-            
+        except Exception as e:
+            bt.logging.error(e)
+            continue
         # If the user interrupts the program, gracefully exit.
         except KeyboardInterrupt:
             bt.logging.success("Keyboard interrupt detected. Exiting validator.")

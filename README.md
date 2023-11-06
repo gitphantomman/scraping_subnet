@@ -20,10 +20,9 @@ on Bittensor's main-network (real TAO, to be released), Bittensor's test-network
 
 # Introduction
 
-Data scraping plays a pivotal role in many AI and machine learning models, often serving as the partial layer for various subnets, including s1. We aim to extract data from platforms like Reddit, Twitter, and other social media sites, consolidating this information into shared storage solutions like Weights & Biases (wandb). In the future, we plan to utilize the storage subnet of Bittensor to enhance our data storage capabilities. 
+Data scraping is a critical component in numerous AI and machine learning models, often acting as the foundational layer for various subnets, including s1. Our objective is to harvest data from platforms such as Reddit, Twitter, and other social media sites, and aggregate this information into shared storage solutions like `Wasabi` s3 storage. Looking ahead, we intend to leverage the storage subnet of Bittensor to augment our data storage capabilities.
 
-![Alt text](docs/Screenshot_18.png)
-
+For search and retrieval purposes, validators have access to the indexing table, which is constructed using MongoDB.
 
 
 
@@ -51,96 +50,117 @@ python -m pip install -e .
 
 
 # Running Miner
+A miner receives a query from the validator approximately every minute.
+This query contains specific search keys.
+The miner then scrapes data from Twitter or Reddit using Apify and returns the results.
 
 ## Prerequisites
 
-For mining you need twitter developer account. If you don't have one, you can obtain it from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/products).
-And also you need reddit developer account. If you don't have one, you can obtain it from the [Reddit Developer Portal](https://www.reddit.com/prefs/apps).
+For mining you need apify api key. If you don't have one, you can obtain it from the [Apify Settings](https://console.apify.com/account/integrations).
+And also you need to set which actor you're going to use and actor ids.
+You can get actor ids from [Apify Actors](https://console.apify.com/actors/)
 
-## Running Scraping Script (Twitter & Reddit)
+## Configuration with .env
 
-A miner periodically scrapes data from Twitter, at intervals of every 15 seconds, and stores this data in a local database. To perform this operation, a Twitter developer account is required. If you do not have one, you can obtain it from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/products).
-The scraped data is then saved to `neurons/twitter_data.db` and `neurons/reddit_data.db`. This allows the miner to respond to queries from the validator using the data stored in this database.
 
-1. You have to set environment variables in dotenv file. You can use the `.env.example` file as a template.
+You have to set environment variables in dotenv file. You can use the `.env.example` file as a template.
 ```bash
-# PRAW Credentials
-# Reddit Personal use script (14 characters)
-CLIENT_ID=
 
-# Reddit Secret key (27 characters)
-CLIENT_SECRET=
+# Validator & Miner both MUST!
+APIFY_API_KEY=
+APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLUSH
+APIFY_REDDIT_QUERY_PROVIDER=REDDIT_SCRAPER_LITE
+APIFY_TWEET_FLUSH_ACTOR_ID=wHMoznVs94gOcxcZl
+APIFY_REDDIT_SCRAPER_LITE_ACTOR_ID=oAuCIx3ItNrs2okjQ
 
-# Reddit App name
-USER_AGENT=
+# Validator & Miner Optional
+APIFY_TWEET_SCRAPER_ACTOR_ID=2s3kSMq7tpuC3bI6M
+APIFY_REDDIT_SCRAPER_ACTOR_ID=FgJtjDwJCLhRH9saM
 
-# Reddit username
-REDDIT_USERNAME=
 
-# Reddit password
-REDDIT_PASSWORD=
 
-# Twitter Credentials
-# Twitter TOKEN 
-BEARER_TOKEN= 
+
+# Validator Must
+
+WASABI_ENDPOINT_URL=   
+
+# This should be from owner. Please dm to gitphantom
+WASABI_ACCESS_KEY_ID='https://s3.us-central-1.wasabisys.com'
+WASABI_ACCESS_KEY=
+INDEXING_API_KEY=
+
 ```
 
-2. Run the scraping scripts.
-```bash
-# To run the scraping script
-cd neurons
-python twitterScrap.py 
-python redditScrap.py
-```
-
-3. If you want to run twitter scraping script as a **cron job**.
-
-An example to scrape twitter every 6 hours. Edit your crontab with command `crontab -e`. Please note, your `python` and `twitterScrap.py` locations may (most likely!) vary, so adjust accordingly. 
-```bash
-# Set variables
-BEARER_TOKEN=<token from twitter>
-SINGLE_RUN=true
-# Number of twits to fetch per request
-R_LIMIT=100
-0 */6 * * * python neurons/twitterScrap.py > ~/twitter_scraper.log
-```
+The most important env parameter is `APIFY_API_KEY`.
 
 
 ## Running Miner Script
-A miner periodically extracts specified data from Twitter using scraping tools or APIs, store this data securely, and then retrieve and provide this data in response to queries from validators, who evaluate the data based on predetermined criteria.
 
 ```bash
 # To run the miner
 cd neurons
 python miner.py 
-    --netuid <your netuid>  # The subnet id you want to connect to
-    --subtensor.network <your chain url>  # blockchain endpoint you want to connect
+    --netuid 3  # The subnet id you want to connect to
+    --subtensor.network finney  # blockchain endpoint you want to connect
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
 ```
 
-Tip:
+Tips for Optimizing Your Scraper:
 
-    1. You can use multiple keys for scraping many data.
-    2. You can change keywords for scraping different data. (Default: 'tao') Of course, you can change every epoch. They are defined in `neurons/twitterScrap.py` and `neurons/redditScrap.py` file.
-    3. You can set number of data to respond to queries from validators. (Default: 500) They are defined in `neurons/miner.py` file.
-    4. You can change other parameters for your higher score.
+    1. Customize your scraper's options by modifying the `run_input` parameter for each scraper.
+    2. Keep in mind that faster scraping and more data will result in higher costs for your api_key.
+    3. Strive for unique, recent, and accurate data to achieve a higher score.
+    4. Avoid submitting fake data as it will result in a score of 0 for that epoch. Validators will randomly choose and check your data against their own scraping scripts and compare the results.
 
 # Running Validator
 
-The validator issues queries to miners for data, compute scores for the provided data based on uniqueness, rarity, or volume, transfer this scored data to a communal distributed storage system, and adjust weights according to the normalized scores of the miners.
+Validators perform several key tasks in the data mining process. They issue queries to miners, requesting specific data. Once the data is received, validators compute scores based on factors such as uniqueness, rarity, and volume. 
+
+The scoring process involves calculating a time score and a unique score for each piece of data. Validators also verify the authenticity of the data by running their own Apify scripts. This helps to ensure that the data is not fake and contains the correct search key.
+
+Once the data has been scored and verified, it is transferred to a shared storage system on Wasabi S3. Validators then update an indexing table, which is maintained using MongoDB. This table allows validators to efficiently access, search, and fetch data.
+
+Access to the indexing table is secured using an indexing API key, which is provided via an indexing endpoint. This ensures that only authorized validators can access and manipulate the stored data.
 
 ## Prerequisites
 
-1. You need wandb account. If you don't have one, you can obtain it from the [wandb](https://wandb.ai/authorize).
-2. Then you have to initialize wandb using `wandb login` command.
+1. For validating you need apify api key. If you don't have one, you can obtain it from the [Apify Settings](https://console.apify.com/account/integrations).
+2. And also you need to set which actor you're going to use and actor ids.
+You can get actor ids from [Apify Actors](https://console.apify.com/actors/)
+3. You have to get `WASABI_ACCESS_KEY` and `INDEXING_API_KEY` from subnet owner(gitphantom). 
 
-    ```bash
-    pip install wandb
-    wandb login
-    ```
-3. You have to create a project in wandb. You can use the `scraping_subnet` project as a template.
+## Configuration with .env
+
+
+You have to set environment variables in dotenv file. You can use the `.env.example` file as a template.
+```bash
+
+# Validator & Miner both MUST!
+APIFY_API_KEY=
+APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLUSH
+APIFY_REDDIT_QUERY_PROVIDER=REDDIT_SCRAPER_LITE
+APIFY_TWEET_FLUSH_ACTOR_ID=wHMoznVs94gOcxcZl
+APIFY_REDDIT_SCRAPER_LITE_ACTOR_ID=oAuCIx3ItNrs2okjQ
+
+# Validator & Miner Optional
+APIFY_TWEET_SCRAPER_ACTOR_ID=2s3kSMq7tpuC3bI6M
+APIFY_REDDIT_SCRAPER_ACTOR_ID=FgJtjDwJCLhRH9saM
+
+
+
+
+# Validator Must
+
+WASABI_ENDPOINT_URL=   
+
+# This should be from owner. Please dm to gitphantom
+WASABI_ACCESS_KEY_ID='https://s3.us-central-1.wasabisys.com'
+WASABI_ACCESS_KEY=
+INDEXING_API_KEY=
+
+```
 
 
 ## Running Validator Script
@@ -149,13 +169,10 @@ The validator issues queries to miners for data, compute scores for the provided
 cd neurons
 # To run the validator
 python validator.py 
-    --netuid <your netuid> # The subnet id you want to connect to
-    --subtensor.network <your chain url> # blockchain endpoint you want to connect
+    --netuid 3 # The subnet id you want to connect to
+    --subtensor.network finney # blockchain endpoint you want to connect
     --wallet.name <your validator wallet>  # name of your wallet
     --wallet.hotkey <your validator hotkey> # hotkey name of your wallet
-    --wandb.username <your wandb username> # your wandb username
-    --wandb.project <your wandb project name> # the wandb project name you want to save to (Default: zhjgapym)
-    --wandb.override_config # Boolean flag that, when set (override) the `wandb_config.json` with command line arguments. (default: False)
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
 ```
 
@@ -181,3 +198,7 @@ This repository is licensed under the MIT License.
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 ```
+
+
+python miner.py --wallet.name test_miner --wallet.hotkey test_miner_1 --subtensor.network test --netuid 18
+python validator.py --wallet.name test_validator --wallet.hotkey test_validator_1 --subtensor.network test --netuid 18
