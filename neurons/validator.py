@@ -72,7 +72,7 @@ def get_config():
 import random
 
 def random_line(a_file="keywords.txt"):
-    if not exists(a_file):
+    if not os.path.exists(a_file):
         print(f"Keyword file not found at location: {a_file}")
         quit()
     lines = open(a_file).read().splitlines()
@@ -119,8 +119,8 @@ def main( config ):
     bt.logging.info("Building validation weights.")
 
     # Initialize alpha for reddit and twitter
-    redditAlpha = 0.9
-    twitterAlpha = 0.8
+    redditAlpha = 0.7
+    twitterAlpha = 0.7
 
     # Initialize weights for each miner to 1.
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
@@ -214,11 +214,6 @@ def main( config ):
                     timeout = 60
                 )          
 
-                print(responses)
-                if(len(responses) > 0):
-                    for item in responses:
-                        bt.logging.info(f"\033[92m 𝕏 ✅ Length of Twitter Response: {len(item)} \033[0m")
-                
 
                 # Update score
                 new_scores = []
@@ -234,22 +229,13 @@ def main( config ):
                 
                 try:
                     if len(responses) > 0:
-                        storage.store.twitter_store(data = responses)
+                        indexing_result = storage.store.twitter_store(data = responses, search_keys=[search_key])
+                        bt.logging.info(f"\033[92m saving index info: {indexing_result} \033[0m")
                     else:
                         bt.logging.warning("\033[91m ⚠ No twitter data found in responses \033[0m")
                 except Exception as e:
                     bt.logging.error(f"❌ Error in store_Twitter: {e}")
-                # Store 
 
-                # # check if there is any data
-                # try:
-                #     if len(responses) > 0:
-                #         # store data into wandb
-                #         store_Twitter_wandb(responses, config.wandb.username, config.wandb.project, wandb_params['twitter'])
-                #     else:
-                #         bt.logging.warning("No twitter data found in responses")
-                # except Exception as e:
-                #     bt.logging.error(f"Error in store_Twitter_wandb: {e}")
                     
                         
                 current_block = subtensor.block
@@ -300,12 +286,8 @@ def main( config ):
                     scraping.protocol.RedditScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True,
-                    timeout = 30 
+                    timeout = 60 
                 )
-                if(len(responses) > 0):
-                    for item in responses:
-                        bt.logging.info(f"\033[92m ᕕ ✅ Length of Reddit Response: {len(item)} \033[0m")
-                        bt.logging.info(item)
 
                 # Update score
                 new_scores = []
@@ -320,7 +302,8 @@ def main( config ):
                 bt.logging.info(f"\033[92m ✓ Updated Scores: {scores} \033[0m")
                 try:
                     if len(responses) > 0:
-                        storage.store.reddit_store(data = responses)
+                        indexing_result = storage.store.reddit_store(data = responses, search_keys=[search_key])
+                        bt.logging.info(f"\033[92m saving index info: {indexing_result} \033[0m")
                     else:
                         bt.logging.warning("\033[91m ⚠ No reddit data found in responses \033[0m")
                 except Exception as e:
@@ -379,6 +362,7 @@ def main( config ):
             traceback.print_exc()
         except Exception as e:
             bt.logging.error(e)
+            continue
         # If the user interrupts the program, gracefully exit.
         except KeyboardInterrupt:
             bt.logging.success("Keyboard interrupt detected. Exiting validator.")

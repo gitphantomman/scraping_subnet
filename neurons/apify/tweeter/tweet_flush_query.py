@@ -58,7 +58,6 @@ class TweetFlushQuery:
         Returns:
             list: A list of flushed tweet data.
         """
-        print(search_queries, limit_number)
         run_input = {
             "collect_user_info": False,
             "detect_language": False,
