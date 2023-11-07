@@ -38,12 +38,14 @@ def twitter_store(data = [], search_keys = []):
         if response != [] and response != None:
             writer.writerows(response)
             total_count += len(response)
+    if total_count > 0:
+        s3.Bucket('twitterscrapingbucket').put_object(Key='twitter/' + filename, Body=csv_buffer.getvalue())
 
-    s3.Bucket('twitterscrapingbucket').put_object(Key='twitter/' + filename, Body=csv_buffer.getvalue())
-
-    csv_buffer.close()
-    indexing_result = save_indexing_row(file_name=filename, source_type="twitter", row_count=total_count, search_keys=search_keys)
-    return indexing_result
+        csv_buffer.close()
+        indexing_result = save_indexing_row(file_name=filename, source_type="twitter", row_count=total_count, search_keys=search_keys)
+        return indexing_result
+    else:
+        return {"msg": "data length is 0"}
 
 def reddit_store(data = [], search_keys = []):
     filename = 'reddit_' + generate_random_string() + '.csv'
@@ -58,12 +60,14 @@ def reddit_store(data = [], search_keys = []):
         if response != [] and response != None:
             writer.writerows(response)
             total_count += len(response)
+    if total_count > 0:
+        s3.Bucket('redditscrapingbucket').put_object(Key='reddit/' + filename, Body=csv_buffer.getvalue())
 
-    s3.Bucket('redditscrapingbucket').put_object(Key='reddit/' + filename, Body=csv_buffer.getvalue())
-
-    csv_buffer.close()
-    indexing_result = save_indexing_row(file_name=filename, source_type="reddit", row_count=total_count, search_keys=search_keys)
-    return indexing_result
+        csv_buffer.close()
+        indexing_result = save_indexing_row(file_name=filename, source_type="reddit", row_count=total_count, search_keys=search_keys)
+        return indexing_result
+    else:
+        return {"msg": "data length is 0"}
 
 def save_indexing_row(file_name, source_type, row_count, search_keys = []):
 
