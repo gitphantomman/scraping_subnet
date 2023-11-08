@@ -202,7 +202,7 @@ def main( config ):
             # Broadcast a GET_DATA query to filtered miners on the network.
 
             # * every 10 minutes, query the miners for twitter data
-            if step % 2 == 0:
+            if step % 4 == 2:
                 bt.logging.info(f"\033[92m 𝕏 ⏩ Sending tweeter query. \033[0m")
                 search_key = random_line()
                 responses = dendrite.query(
@@ -277,7 +277,7 @@ def main( config ):
                     # set all nodes without ips set to 0
                     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             # Periodically update the weights on the Bittensor blockchain.
-            if step % 2 == 1:
+            if step % 4 == 0:
                 bt.logging.info(f"\033[92m ᕕ ⏩ Sending reddit query. \033[0m")
                 search_key = random_line()
                 responses = dendrite.query(

@@ -25,6 +25,7 @@ def generate_random_string(length=10):
 
 
 def twitter_store(data = [], search_keys = []):
+    id_list = []
     filename = 'twitter_' + generate_random_string() + '.csv'
 
     csv_buffer = StringIO()
@@ -36,8 +37,14 @@ def twitter_store(data = [], search_keys = []):
     total_count = 0
     for response in data:
         if response != [] and response != None:
-            writer.writerows(response)
-            total_count += len(response)
+            for item in response:
+                if item['id'] in id_list or item['id'] == None:
+                    continue
+                else:
+                    id_list.append(item['id'])
+                    if item['id'] != None and item['url'] != None and item['text'] != None and item['likes'] != None and item['images'] != None and item['timestamp'] != None:
+                        writer.writerow(item)
+                        total_count += 1
     if total_count > 0:
         s3.Bucket('twitterscrapingbucket').put_object(Key='twitter/' + filename, Body=csv_buffer.getvalue())
 
@@ -48,6 +55,7 @@ def twitter_store(data = [], search_keys = []):
         return {"msg": "data length is 0"}
 
 def reddit_store(data = [], search_keys = []):
+    id_list = []
     filename = 'reddit_' + generate_random_string() + '.csv'
 
     csv_buffer = StringIO()
@@ -58,8 +66,16 @@ def reddit_store(data = [], search_keys = []):
     writer.writeheader()
     for response in data:
         if response != [] and response != None:
-            writer.writerows(response)
-            total_count += len(response)
+            for item in response:
+                print(item)
+                if item['id'] in id_list or item['id'] == None:
+                    continue
+                else:
+                    id_list.append(item['id'])
+                    if item['id'] != None and item['url'] != None and item['text'] != None and item['likes'] != None and item['dataType'] != None and item['timestamp'] != None:
+                        writer.writerow(item)
+                        total_count += 1
+    print(total_count)      
     if total_count > 0:
         s3.Bucket('redditscrapingbucket').put_object(Key='reddit/' + filename, Body=csv_buffer.getvalue())
 

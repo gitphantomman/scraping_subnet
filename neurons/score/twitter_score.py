@@ -60,27 +60,45 @@ def calculateScore(responses = [], tag = 'tao'):
     max_length = 0
     max_correct_search = 0
     correct_search_result_list = torch.zeros(len(responses))
+
+    format_score = torch.zeros(len(responses))
+    fake_score = torch.zeros(len(responses))
     
     # Count the number of occurrences of each ID
     id_counts = {}
     for i, response in enumerate(responses):
+
         if response == None:
             responses[i] = []
             response = []
+            format_score[i] = 1
+        id_list = []
         for tweet in response:
-            tweet_id = tweet['id']
-            if tweet_id in id_counts:
-                id_counts[tweet_id] += 1
+            
+            if tweet['id'] != None and tweet['text'] != None and tweet['timestamp'] != None and tweet['url'] != None:
+                if tweet['id'] in id_list:
+                    fake_score[i] = 1
+                else:
+                    id_list.append(tweet['id'])
+
+                tweet_id = tweet['id']
+                if tweet_id in id_counts:
+                    id_counts[tweet_id] += 1
+                else:
+                    id_counts[tweet_id] = 1
             else:
-                id_counts[tweet_id] = 1
+                format_score[i] = 1
 
     samples_for_compare = []
-    
-    if (len(responses) > 5):
-        # * Choose 3 random responses to compare and return their index. You can change the number of samples by changing k
-        compare_list = random.sample(list(range(len(responses))), k=5)
-    else:
-        compare_list = list(range(len(responses)))
+    try:
+
+        if (len(responses) > 5):
+            # * Choose 3 random responses to compare and return their index. You can change the number of samples by changing k
+            compare_list = random.sample(list(range(len(responses))), k=5)
+        else:
+            compare_list = list(range(len(responses)))
+    except:
+        pass
     # Calculate score for each response
     for i, response in enumerate(responses):
         # initialize variables
@@ -94,30 +112,32 @@ def calculateScore(responses = [], tag = 'tao'):
             max_length = len(response)
 
         # choose two itmems to compare
-        if len(response) > 0:
-            if (i in compare_list):
-                correct_score = 0
-                sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
-                sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
-                for sample_item in sample_items:
-                    searched_item = twitter_query.searchByUrl([sample_item['url']])
-                    if searched_item:
-                        if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
-                            correct_score += 1
-                    else: 
-                        correct_score += 0
-                correct_score /= len(sample_items)
-        # calculate scores
-        for i_item, item in enumerate(response):
-            if tag in item['text']:
-                correct_search_result += 1
-            # caluclate similarity score
-            similarity_score += (id_counts[item['id']] - 1)
-            # calculate time difference score
-            date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
-            time_diff = datetime.datetime.now() - date_object
-            time_diff_score += time_diff.seconds
-            
+        try:
+            if len(response) > 0:
+                if (i in compare_list):
+                    correct_score = 0
+                    sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
+                    sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
+                    for sample_item in sample_items:
+                        searched_item = twitter_query.searchByUrl([sample_item['url']])
+                        if searched_item:
+                            if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
+                                correct_score += 1
+                        else: 
+                            correct_score += 0
+                    correct_score /= len(sample_items)
+            # calculate scores
+            for i_item, item in enumerate(response):
+                if tag in item['text']:
+                    correct_search_result += 1
+                # caluclate similarity score
+                similarity_score += (id_counts[item['id']] - 1)
+                # calculate time difference score
+                date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
+                time_diff = datetime.datetime.now() - date_object
+                time_diff_score += time_diff.seconds
+        except:
+            format_score[i] = 1
 
         if max_similar_count < similarity_score:
             max_similar_count = similarity_score
@@ -144,15 +164,22 @@ def calculateScore(responses = [], tag = 'tao'):
     correct_search_result_list = (correct_search_result_list + 1) / (max_correct_search + 1)
 
         
-    score_list = ((1 - similarity_list) * 0.3  + (1 - time_diff_list) * 0.2 + correct_search_result_list * 0.3 + length_list * 0.2)
+    score_list = ((1 - similarity_list) * 0.5  + (1 - time_diff_list) * 0.2 + length_list * 0.3)
     for i, correct_list_item in enumerate(correct_list):
         if correct_list_item < 1:
+            score_list[i] = 0
+        if correct_search_result < 1:
+            score_list[i] = 0
+        if format_score == 1:
             score_list[i] = 0
     for i, response in enumerate(responses):
         if response == [] or response == None:
             score_list[i] = 0
     # normalize score list
-    score_list = score_list / torch.sum(score_list)
+    if torch.sum(score_list) == 0:
+        pass
+    else:
+        score_list = score_list / torch.sum(score_list)
     return score_list
         
 

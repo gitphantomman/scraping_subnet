@@ -200,5 +200,3 @@ This repository is licensed under the MIT License.
 ```
 
 
-python miner.py --wallet.name test_miner --wallet.hotkey test_miner_1 --subtensor.network test --netuid 18
-python validator.py --wallet.name test_validator --wallet.hotkey test_validator_1 --subtensor.network test --netuid 18
