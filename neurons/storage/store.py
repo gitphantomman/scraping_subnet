@@ -67,7 +67,7 @@ def reddit_store(data = [], search_keys = []):
     for response in data:
         if response != [] and response != None:
             for item in response:
-                print(item)
+ 
                 if item['id'] in id_list or item['id'] == None:
                     continue
                 else:
@@ -75,7 +75,7 @@ def reddit_store(data = [], search_keys = []):
                     if item['id'] != None and item['url'] != None and item['text'] != None and item['likes'] != None and item['dataType'] != None and item['timestamp'] != None:
                         writer.writerow(item)
                         total_count += 1
-    print(total_count)      
+  
     if total_count > 0:
         s3.Bucket('redditscrapingbucket').put_object(Key='reddit/' + filename, Body=csv_buffer.getvalue())
 

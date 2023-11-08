@@ -1,0 +1,52 @@
+diff --git a/neurons/miner.py b/neurons/miner.py
+index 01e4d42..6300024 100644
+--- a/neurons/miner.py
++++ b/neurons/miner.py
+@@ -69,6 +69,16 @@ def get_config():
+ 
+ # TODO: Add error handling for when the directory for logging cannot be created
+ 
++import random
++
++def random_line(a_file="keywords.txt"):
++    if not os.path.exists(a_file):
++        print(f"Keyword file not found at location: {a_file}")
++        quit()
++    lines = open(a_file).read().splitlines()
++    return random.choice(lines)
++
++
+ # Main takes the config and starts the miner.
+ def main( config ):
+     """
+@@ -183,7 +193,13 @@ def main( config ):
+         This function runs after the blacklist and priority functions have been called.
+         """
+         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
+-        tweets = twitter_query.execute(synapse.scrap_input["search_key"])
++        if synapse.scrap_input is not None:
++            search_key = synapse.scrap_input["search_key"]
++        else:
++            search_key = [random_line()]
++            bt.logging.info(f"picking random keyword: {search_key} \n")
++
++        tweets = twitter_query.execute(search_key)
+         synapse.scrap_output = tweets
+         bt.logging.info(f"✅ success: number of twitter response data: {len(synapse.scrap_output)} \n")
+         return synapse
+@@ -194,8 +210,13 @@ def main( config ):
+         This function runs after the blacklist and priority functions have been called.
+         """
+         bt.logging.info(f"number of required data: {synapse.scrap_input} \n")
++        if synapse.scrap_input is not None:
++            search_key = synapse.scrap_input["search_key"]
++        else:
++            search_key = [random_line()]
++            bt.logging.info(f"picking random keyword: {search_key} \n")
+         # Fetch latest N posts from miner's local database.
+-        posts = reddit_query.execute(synapse.scrap_input["search_key"])
++        posts = reddit_query.execute(search_key)
+         synapse.scrap_output = posts
+         bt.logging.info(f"✅ success: number of reddit response data: {len(synapse.scrap_output)} \n")
+         return synapse
+
