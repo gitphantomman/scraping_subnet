@@ -153,10 +153,10 @@ APIFY_REDDIT_SCRAPER_ACTOR_ID=FgJtjDwJCLhRH9saM
 
 # Validator Must
 
-WASABI_ENDPOINT_URL=   
+WASABI_ENDPOINT_URL='https://s3.us-central-1.wasabisys.com'
 
 # This should be from owner. Please dm to gitphantom
-WASABI_ACCESS_KEY_ID='https://s3.us-central-1.wasabisys.com'
+WASABI_ACCESS_KEY_ID=
 WASABI_ACCESS_KEY=
 INDEXING_API_KEY=
 
@@ -200,3 +200,5 @@ This repository is licensed under the MIT License.
 ```
 
 
+python miner.py --wallet.name test_miner --wallet.hotkey test_miner_1 --subtensor.network test --netuid 18
+python validator.py --wallet.name test_validator --wallet.hotkey test_validator_1 --subtensor.network test --netuid 18
