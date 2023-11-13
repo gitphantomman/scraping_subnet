@@ -214,15 +214,6 @@ def main( config ):
                     timeout = 60
                 )
 
-                response_counts = list(map(lambda x: len(x) if x != None else 0, responses))
-                bt.logging.info(f"Response counts({response_counts}).")
-
-                # Filter out tweets with missing attributes
-                responses = list(map(lambda tweets: list(filter(lambda tweet: "id" in tweet and "timestamp" in tweet and "text" in tweet, tweets)) if tweets else None, responses))
-
-                response_counts = list(map(lambda x: len(x) if x != None else 0, responses))
-                bt.logging.info(f"Filtered response counts({response_counts}).")
-
                 # Update score
                 new_scores = []
                 try:
