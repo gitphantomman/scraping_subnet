@@ -42,7 +42,7 @@ def twitter_store(data = [], search_keys = []):
                     continue
                 else:
                     id_list.append(item['id'])
-                    if item['id'] != None and item['url'] != None and item['text'] != None and item['likes'] != None and item['images'] != None and item['timestamp'] != None:
+                    if item.get('id') != None and item.get('url') != None and item.get('text') != None and item.get('likes') != None and item.get('images') != None and item.get('timestamp') != None:
                         writer.writerow(item)
                         total_count += 1
     if total_count > 0:
@@ -72,7 +72,7 @@ def reddit_store(data = [], search_keys = []):
                     continue
                 else:
                     id_list.append(item['id'])
-                    if item['id'] != None and item['url'] != None and item['text'] != None and item['likes'] != None and item['dataType'] != None and item['timestamp'] != None:
+                    if item.get('id') != None and item.get('url') != None and item.get('text') != None and item.get('likes') != None and item.get('dataType') != None and item.get('timestamp') != None:
                         writer.writerow(item)
                         total_count += 1
   

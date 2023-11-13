@@ -202,9 +202,9 @@ def main( config ):
             # Broadcast a GET_DATA query to filtered miners on the network.
 
             # * every 10 minutes, query the miners for twitter data
-            if step % 4 == 2:
-                bt.logging.info(f"\033[92m 𝕏 ⏩ Sending tweeter query. \033[0m")
+            if step % 4 == 0:
                 search_key = random_line()
+                bt.logging.info(f"\033[92m 𝕏 ⏩ Sending tweeter query ({search_key}). \033[0m")
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
@@ -212,15 +212,14 @@ def main( config ):
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
                     timeout = 60
-                )          
-
+                )
 
                 # Update score
                 new_scores = []
                 try:
                     if(len(responses) > 0 and responses is not None):
                         new_scores = score.twitter_score.calculateScore(responses = responses, tag = search_key)
-                        # bt.logging.info(f"✅ new_scores: {new_scores}")
+                        bt.logging.info(f"✅ new_scores: {new_scores}")
                 except Exception as e:
                     bt.logging.error(f"❌ Error in twitterScore: {e}")
                 for i, score_i in enumerate(new_scores):
@@ -277,7 +276,7 @@ def main( config ):
                     # set all nodes without ips set to 0
                     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             # Periodically update the weights on the Bittensor blockchain.
-            if step % 4 == 0:
+            if step % 4 == 2:
                 bt.logging.info(f"\033[92m ᕕ ⏩ Sending reddit query. \033[0m")
                 search_key = random_line()
                 responses = dendrite.query(

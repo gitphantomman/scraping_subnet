@@ -74,8 +74,9 @@ def calculateScore(responses = [], tag = 'tao'):
             format_score[i] = 1
         id_list = []
         for tweet in response:
-            
-            if tweet['id'] != None and tweet['text'] != None and tweet['timestamp'] != None and tweet['url'] != None:
+            try:
+                # Check that 'text' and 'timestamp' fields exist
+                tweet['text'] and tweet['timestamp']
                 if tweet['id'] in id_list:
                     fake_score[i] = 1
                 else:
@@ -86,7 +87,7 @@ def calculateScore(responses = [], tag = 'tao'):
                     id_counts[tweet_id] += 1
                 else:
                     id_counts[tweet_id] = 1
-            else:
+            except:
                 format_score[i] = 1
 
     samples_for_compare = []
