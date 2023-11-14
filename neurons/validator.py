@@ -31,6 +31,9 @@ import json
 import score.reddit_score
 import score.twitter_score
 import storage.store
+from neurons.apify.queries import get_query, QueryType, QueryProvider
+from apify_client import ApifyClient
+
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
     """
@@ -87,6 +90,25 @@ def main( config ):
     bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
     # Log the configuration for reference.
     bt.logging.info(config)
+
+    # Check access to Apify
+    try:
+        twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLUSH)
+        client = ApifyClient(twitter_query.actor_config.api_key)
+        client.actors().list
+    except Exception as e:
+        bt.logging.error(f"{e}")
+        bt.logging.error(f"Unable to connect to Apify. Check your dotenv file and make sure your APIFY_API_KEY is set correctly.")
+        exit()
+
+    # Check access to storage
+    try:
+        bucket = storage.store.s3.Bucket('twitterscrapingbucket').Acl().owner
+        bt.logging.info("got bucket!")
+    except Exception as e:
+        bt.logging.error(f"{e}")
+        bt.logging.error(f"Unable to connect to wasabi storage. Check your dotenv file and make sure your WASABI_ACCESS_KEY_ID, WASABI_ACCESS_KEY, and INDEXING_API_KEY are set correctly.")
+        exit()
 
     # These are core Bittensor classes to interact with the network.
     bt.logging.info("Setting up bittensor objects.")
