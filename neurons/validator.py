@@ -31,7 +31,6 @@ import json
 import score.reddit_score
 import score.twitter_score
 import storage.store
-from neurons.apify.queries import get_query, QueryType, QueryProvider
 from apify_client import ApifyClient
 
 # This function is responsible for setting up and parsing command-line arguments.
@@ -93,9 +92,8 @@ def main( config ):
 
     # Check access to Apify
     try:
-        twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLUSH)
-        client = ApifyClient(twitter_query.actor_config.api_key)
-        client.actors().list
+        client = ApifyClient(os.getenv("APIFY_API_KEY"))
+        client.actors().list()
     except Exception as e:
         bt.logging.error(f"{e}")
         bt.logging.error(f"Unable to connect to Apify. Check your dotenv file and make sure your APIFY_API_KEY is set correctly.")
