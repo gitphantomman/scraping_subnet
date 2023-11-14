@@ -103,8 +103,7 @@ def main( config ):
 
     # Check access to storage
     try:
-        bucket = storage.store.s3.Bucket('twitterscrapingbucket').Acl().owner
-        bt.logging.info("got bucket!")
+        storage.store.s3.Bucket('twitterscrapingbucket').Acl().owner
     except Exception as e:
         bt.logging.error(f"{e}")
         bt.logging.error(f"Unable to connect to wasabi storage. Check your dotenv file and make sure your WASABI_ACCESS_KEY_ID, WASABI_ACCESS_KEY, and INDEXING_API_KEY are set correctly.")
