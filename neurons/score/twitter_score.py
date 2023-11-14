@@ -165,11 +165,9 @@ def calculateScore(responses = [], tag = 'tao'):
     correct_search_result_list = (correct_search_result_list + 1) / (max_correct_search + 1)
 
         
-    score_list = ((1 - similarity_list) * 0.5  + (1 - time_diff_list) * 0.2 + length_list * 0.3)
+    score_list = ((1 - similarity_list) * 0.3  + (1 - time_diff_list) * 0.2 + length_list * 0.3 + correct_search_result_list * 0.2)
     for i, correct_list_item in enumerate(correct_list):
         if correct_list_item < 1:
-            score_list[i] = 0
-        if correct_search_result_list[i] < 1:
             score_list[i] = 0
         if format_score[i] == 1:
             score_list[i] = 0
