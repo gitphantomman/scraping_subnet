@@ -31,6 +31,8 @@ import json
 import score.reddit_score
 import score.twitter_score
 import storage.store
+from apify_client import ApifyClient
+
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
     """
@@ -87,6 +89,23 @@ def main( config ):
     bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
     # Log the configuration for reference.
     bt.logging.info(config)
+
+    # Check access to Apify
+    try:
+        client = ApifyClient(os.getenv("APIFY_API_KEY"))
+        client.actors().list()
+    except Exception as e:
+        bt.logging.error(f"{e}")
+        bt.logging.error(f"Unable to connect to Apify. Check your dotenv file and make sure your APIFY_API_KEY is set correctly.")
+        exit()
+
+    # Check access to storage
+    try:
+        storage.store.s3.Bucket('twitterscrapingbucket').Acl().owner
+    except Exception as e:
+        bt.logging.error(f"{e}")
+        bt.logging.error(f"Unable to connect to wasabi storage. Check your dotenv file and make sure your WASABI_ACCESS_KEY_ID, WASABI_ACCESS_KEY, and INDEXING_API_KEY are set correctly.")
+        exit()
 
     # These are core Bittensor classes to interact with the network.
     bt.logging.info("Setting up bittensor objects.")
