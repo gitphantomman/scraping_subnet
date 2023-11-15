@@ -126,7 +126,7 @@ def calculateScore(responses = [], tag = 'tao'):
                                 correct_score += 1
                         else: 
                             correct_score += 0
-                    correct_score /= len(sample_items)
+                    correct_score /= len(sample_items) + 1
             # calculate scores
             for i_item, item in enumerate(response):
                 if tag.lower() in item['text'].lower():
