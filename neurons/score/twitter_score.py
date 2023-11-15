@@ -153,8 +153,7 @@ def calculateScore(responses = [], tag = 'tao'):
         time_diff_list[i] = time_diff_score
         length_list[i] = len(response)
         correct_list[i] = correct_score
-        correct_search_result_list[i] = correct_search_result
-
+        correct_search_result_list[i] = correct_search_result / len(response)
 
     
 
@@ -162,7 +161,6 @@ def calculateScore(responses = [], tag = 'tao'):
     time_diff_list = (time_diff_list + 1) / (max_time_diff + 1)
     correct_list = (correct_list + 1) / (max_correct_score + 1)
     length_list = (length_list + 1) / (max_length + 1)
-    correct_search_result_list = (correct_search_result_list + 1) / (max_correct_search + 1)
 
         
     score_list = ((1 - similarity_list) * 0.3  + (1 - time_diff_list) * 0.2 + length_list * 0.3 + correct_search_result_list * 0.2)
