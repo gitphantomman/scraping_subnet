@@ -141,14 +141,19 @@ def main( config ):
     redditAlpha = 0.7
     twitterAlpha = 0.7
 
-    # Initialize weights for each miner to 1.
-    scores = torch.ones_like(metagraph.S, dtype=torch.float32)
-    bt.logging.info(f"inital miner scores:{scores}")
+    # Restore weights, or initialize weights for each miner to 0.
+    scores_file = "scores.pt"
+    try:
+        scores = torch.load(scores_file)
+        bt.logging.info(f"Loaded scores from save file: {scores}")
+    except:
+        scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
+        bt.logging.info(f"Initialized all scores to 0")
 
-    
+
     curr_block = subtensor.block
 
-    # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
+    # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
     scores = scores * (metagraph.total_stake < 1.024e3)
     # set all nodes without ips set to 0
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
@@ -164,7 +169,7 @@ def main( config ):
     last_updated_block = curr_block - (curr_block % 100)
     last_reset_weights_block = curr_block
 
-    
+
     
 
     # Main loop
@@ -285,7 +290,7 @@ def main( config ):
                 if last_reset_weights_block + 1800 < current_block:
 
                     bt.logging.trace(f"Resetting weights")
-                    scores = torch.ones_like( metagraph.uids , dtype = torch.float32 )
+                    scores = torch.zeros_like( metagraph.uids , dtype = torch.float32 )
                     last_reset_weights_block = current_block
                     # scores = scores * metagraph.last_update > current_block - 600
 
@@ -359,7 +364,7 @@ def main( config ):
                 if last_reset_weights_block + 1800 < current_block:
 
                     bt.logging.trace(f"Resetting weights")
-                    scores = torch.ones_like( metagraph.uids , dtype = torch.float32 )
+                    scores = torch.zeros_like( metagraph.uids , dtype = torch.float32 )
                     last_reset_weights_block = current_block
                     # scores = scores * metagraph.last_update > current_block - 600
 
@@ -371,6 +376,8 @@ def main( config ):
             step += 1
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
+            torch.save(scores, scores_file)
+            bt.logging.info(f"Saved weights to \"{scores_file}\"")
             # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
             time.sleep(bt.__blocktime__ * 10)
 
