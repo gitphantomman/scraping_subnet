@@ -153,7 +153,10 @@ def calculateScore(responses = [], tag = 'tao'):
         time_diff_list[i] = time_diff_score
         length_list[i] = len(response)
         correct_list[i] = correct_score
-        correct_search_result_list[i] = correct_search_result / len(response)
+        if len(response) > 0:
+            correct_search_result_list[i] = correct_search_result / len(response)
+        else:
+            correct_search_result_list[i] = 0
 
     
 
