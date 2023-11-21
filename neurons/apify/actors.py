@@ -41,6 +41,7 @@ class ActorConfig:
         # self.api_key = os.environ.get('APIFY_API_KEY')  # Get the Apify API key from environment variable
         self.api_key = os.getenv("APIFY_API_KEY")
         self.actor_id = actor_id  # Actor ID
+        self.timeout_secs = 5 * 60 # Default to 5 minutes timeout
 
 
 def run_actor(actor_config: ActorConfig, run_input: dict, default_dataset_id: str = "defaultDatasetId"):
@@ -58,7 +59,7 @@ def run_actor(actor_config: ActorConfig, run_input: dict, default_dataset_id: st
     # Initialize the Apify client with the API key
     client = ApifyClient(actor_config.api_key)
     logger.info(f"Running actor: {actor_config.actor_id}")
-    run = client.actor(actor_config.actor_id).call(run_input=run_input)  # Start the actor run
+    run = client.actor(actor_config.actor_id).call(run_input=run_input, timeout_secs=actor_config.timeout_secs)  # Start the actor run
     logger.info(f"Actor run: {run}")
 
     # Fetch data items from the specified dataset
