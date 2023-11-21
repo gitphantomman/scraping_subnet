@@ -287,18 +287,7 @@ def main( config ):
                     last_updated_block = current_block
                     if result: bt.logging.success('✅ Successfully set weights.')
                     else: bt.logging.error('Failed to set weights.')
-                if last_reset_weights_block + 1800 < current_block:
 
-                    bt.logging.trace(f"Resetting weights")
-                    scores = torch.zeros_like( metagraph.uids , dtype = torch.float32 )
-                    last_reset_weights_block = current_block
-                    # scores = scores * metagraph.last_update > current_block - 600
-
-                    # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
-                    scores = scores * (metagraph.total_stake < 1.024e3) 
-
-                    # set all nodes without ips set to 0
-                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             # Periodically update the weights on the Bittensor blockchain.
             if step % 4 == 2:
                 bt.logging.info(f"\033[92m ᕕ ⏩ Sending reddit query. \033[0m")
@@ -361,19 +350,20 @@ def main( config ):
                     last_updated_block = current_block
                     if result: bt.logging.success('✅ Successfully set weights.')
                     else: bt.logging.error('Failed to set weights.')
-                if last_reset_weights_block + 1800 < current_block:
 
-                    bt.logging.trace(f"Resetting weights")
-                    scores = torch.zeros_like( metagraph.uids , dtype = torch.float32 )
-                    last_reset_weights_block = current_block
-                    # scores = scores * metagraph.last_update > current_block - 600
-
-                    # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
-                    scores = scores * (metagraph.total_stake < 1.024e3) 
-
-                    # set all nodes without ips set to 0
-                    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
             step += 1
+
+            if last_reset_weights_block + 1800 < current_block:
+                bt.logging.trace(f"Clearing weights for validators and nodes without IPs")
+                last_reset_weights_block = current_block
+                # scores = scores * metagraph.last_update > current_block - 600
+
+                # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
+                scores = scores * (metagraph.total_stake < 1.024e3) 
+
+                # set all nodes without ips set to 0
+                scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
+
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
             torch.save(scores, scores_file)
