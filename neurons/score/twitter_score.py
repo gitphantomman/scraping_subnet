@@ -23,6 +23,9 @@ import torch
 import datetime
 from neurons.apify.queries import get_query, QueryType, QueryProvider
 import random
+import bittensor as bt
+from urllib.parse import urlparse
+import os
 
 twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLUSH)
 
@@ -81,6 +84,15 @@ def calculateScore(responses = [], tag = 'tao'):
                     fake_score[i] = 1
                 else:
                     id_list.append(tweet['id'])
+                
+                parsed_url = urlparse(tweet['url'])
+                # Extract the path from the URL 
+                path = parsed_url.path
+                # Get the last component of the path
+                last_component = os.path.basename(path)
+                if last_component != tweet['id']:
+                    bt.logging.info(f"id/url mismatch detected: {tweet['url']}")
+                    fake_score[i] = 1
 
                 tweet_id = tweet['id']
                 if tweet_id in id_counts:
@@ -112,14 +124,15 @@ def calculateScore(responses = [], tag = 'tao'):
         if len(response) > max_length:
             max_length = len(response)
 
-        # choose two itmems to compare
+        # choose two items to compare
         try:
             if len(response) > 0:
                 if (i in compare_list):
                     correct_score = 0
-                    sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
+                    sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can control k to change the number of samples
                     sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
                     for sample_item in sample_items:
+                        bt.logging.info(f"Attempting to verify tweet: {sample_item['url']}")
                         searched_item = twitter_query.searchByUrl([sample_item['url']])
                         if searched_item:
                             if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
@@ -131,7 +144,7 @@ def calculateScore(responses = [], tag = 'tao'):
             for i_item, item in enumerate(response):
                 if tag.lower() in item['text'].lower():
                     correct_search_result += 1
-                # caluclate similarity score
+                # calculate similarity score
                 similarity_score += (id_counts[item['id']] - 1)
                 # calculate time difference score
                 date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
