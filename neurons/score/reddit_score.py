@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 
 import torch
 import datetime
+import bittensor as bt
 from neurons.apify.queries import get_query, QueryType, QueryProvider
 import random
 from dateutil.parser import parse
@@ -122,12 +123,16 @@ def calculateScore(responses = [], tag = 'tao'):
                     sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
                     sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
                     for sample_item in sample_items:
-                        searched_item = reddit_query.searchByUrl([sample_item['url']])
-                        if searched_item:
-                            if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
-                                correct_score += 1
-                        else: 
-                            correct_score += 0
+                        try:
+                            bt.logging.info(f"Attempting to verify post: {sample_item['url']}")
+                            searched_item = reddit_query.searchByUrl([sample_item['url']])
+                            if searched_item:
+                                if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
+                                    correct_score += 1
+                            else: 
+                                correct_score += 0
+                        except Exception as e:
+                            bt.logging.error(f"❌ Error while verifying post: {e}")
                     correct_score /= len(sample_items)
             # calculate scores
                     for i_item, item in enumerate(response):
