@@ -123,29 +123,31 @@ def calculateScore(responses = [], tag = 'tao'):
                     sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
                     sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
                     for sample_item in sample_items:
+                        bt.logging.info(f"Attempting to verify post: {sample_item['url']}")
                         try:
-                            bt.logging.info(f"Attempting to verify post: {sample_item['url']}")
                             searched_item = reddit_query.searchByUrl([sample_item['url']])
                             if searched_item:
                                 if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
                                     correct_score += 1
+                                else:
+                                    bt.logging.info(f"Tampered post! {sample_item}")
                             else: 
-                                correct_score += 0
+                                bt.logging.info(f"No result returned for {sample_item['url']}")
                         except Exception as e:
                             bt.logging.error(f"❌ Error while verifying post: {e}")
                     correct_score /= len(sample_items)
             # calculate scores
-                    for i_item, item in enumerate(response):
-                        if tag.lower() in item['text'].lower():
-                            correct_search_result += 1
-                        # caluclate similarity score
-                        similarity_score += (id_counts[item['id']] - 1)
-                        # calculate time difference score
-                        date_temp = parse(item['timestamp'])
-                        date_string = date_temp.strftime('%Y-%m-%d %H:%M:%S+00:00')
-                        date_object = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
-                        time_diff = datetime.datetime.now() - date_object
-                        time_diff_score += time_diff.seconds
+            for i_item, item in enumerate(response):
+                if tag.lower() in item['text'].lower():
+                    correct_search_result += 1
+                # calculate similarity score
+                similarity_score += (id_counts[item['id']] - 1)
+                # calculate time difference score
+                date_temp = parse(item['timestamp'])
+                date_string = date_temp.strftime('%Y-%m-%d %H:%M:%S+00:00')
+                date_object = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
+                time_diff = datetime.datetime.now() - date_object
+                time_diff_score += time_diff.seconds
         except:
             format_score[i] = 1
 
@@ -168,13 +170,19 @@ def calculateScore(responses = [], tag = 'tao'):
             correct_search_result_list[i] = 0
 
 
-    
+    bt.logging.info(f"length_list: {length_list}")
+    bt.logging.info(f"correct_list: {correct_list}")
+    bt.logging.info(f"similarity_list: {similarity_list}")
 
     similarity_list = (similarity_list + 1) / (max_similar_count + 1)
     time_diff_list = (time_diff_list + 1) / (max_time_diff + 1)
     correct_list = (correct_list + 1) / (max_correct_score + 1)
     length_list = (length_list + 1) / (max_length + 1)
 
+    bt.logging.info(f"time_diff contribution: {(1 - time_diff_list) * 0.2}")
+    bt.logging.info(f"length contribution: {length_list * 0.3}")
+    bt.logging.info(f"similarity contribution: {(1 - similarity_list) * 0.3}")
+    bt.logging.info(f"correct_search contribution: {correct_search_result_list * 0.2}")
         
     score_list = ((1 - similarity_list) * 0.3  + (1 - time_diff_list) * 0.2 + length_list * 0.3 + correct_search_result_list * 0.2)
     for i, correct_list_item in enumerate(correct_list):
