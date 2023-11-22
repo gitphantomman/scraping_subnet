@@ -138,16 +138,17 @@ def calculateScore(responses = [], tag = 'tao'):
                             if searched_item:
                                 if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
                                     correct_score += 1
+                                else:
+                                    bt.logging.info(f"Tampered tweet! {sample_item}")
                             else: 
-                                correct_score += 0
+                                bt.logging.info(f"No result returned for {sample_item['url']}")
                         except Exception as e:
-                            bt.logging.error(f"Error while verifying tweet: {e}")
-                    correct_score /= len(sample_items) + 1
+                            bt.logging.error(f"❌ Error while verifying tweet: {e}")
+                    correct_score /= len(sample_items)
             # calculate scores
             for i_item, item in enumerate(response):
                 if tag.lower() in item['text'].lower():
                     correct_search_result += 1
-
                 # calculate similarity score
                 similarity_score += (id_counts[item['id']] - 1)
                 # calculate time difference score
