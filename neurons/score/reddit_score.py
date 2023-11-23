@@ -26,7 +26,7 @@ from neurons.apify.queries import get_query, QueryType, QueryProvider
 import random
 from dateutil.parser import parse
 
-reddit_query = get_query(QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE)
+reddit_query = get_query(QueryType.REDDIT, QueryProvider.EPCTEX_REDDIT_SCRAPER)
 
 def calculateScore(responses = [], tag = 'tao'):
     """
@@ -75,34 +75,46 @@ def calculateScore(responses = [], tag = 'tao'):
             response = []
             format_score[i] = 1
         id_list = []
-        for tweet in response:
+        for post in response:
             
             try:
                 # Check that 'text' and 'timestamp' fields exist
-                tweet['text'] and tweet['timestamp']
-                if tweet['id'] in id_list:
+                post['text'] and post['timestamp']
+                if post['id'] in id_list:
                     fake_score[i] = 1
                 else:
-                    id_list.append(tweet['id'])
+                    id_list.append(post['id'])
 
-                tweet_id = tweet['id']
-                if tweet_id in id_counts:
-                    id_counts[tweet_id] += 1
-                else:
-                    id_counts[tweet_id] = 1
+                post_id = post['id']
+                id_counts[post_id] = id_counts.get(post_id, 0) + 1
+                
             except:
                 format_score[i] = 1
 
     samples_for_compare = []
-    try:
 
-        if (len(responses) > 5):
-            # * Choose 3 random responses to compare and return their index. You can change the number of samples by changing k
-            compare_list = random.sample(list(range(len(responses))), k=5)
+    # Choose random responses from each miner to compare, and gather their urls
+    spot_check_idx = []
+    spot_check_urls = []
+    spot_check_posts = []
+    for i, response in enumerate(responses):
+        if len(response) > 0:
+            item_idx = random.randrange(len(response))
+            spot_check_idx.append(item_idx)
+            url = response[item_idx].get('url')
+            if url is not None:
+                spot_check_urls.append(url)
         else:
-            compare_list = list(range(len(responses)))
-    except:
-        pass
+            spot_check_idx.append(None)
+
+    # Fetch spot check urls
+    if len(spot_check_urls) > 0:
+        try:
+            bt.logging.info(f"Validating {len(spot_check_urls)} posts.")
+            spot_check_posts = reddit_query.searchByUrl(spot_check_urls)
+        except Exception as e:
+            bt.logging.error(f"❌ Error while verifying post: {e}")
+
     # Calculate score for each response
     for i, response in enumerate(responses):
         # initialize variables
@@ -110,32 +122,37 @@ def calculateScore(responses = [], tag = 'tao'):
         correct_search_result = 0
         time_diff_score = 0
         total_length += len(response)
-        correct_score = 1
-        # calculate max_length
-        if len(response) > max_length:
-            max_length = len(response)
+
+        # update max_length
+        max_length = max(len(response), max_length)
+
+        # Do spot check for this miner
+        correct_score = 0
+        if len(response) > 0:
+            sample_item = response[spot_check_idx[i]]
+            sample_id = sample_item.get('id', "")
+            if sample_item.get('dataType', 'post') != 'post':
+                try:
+                    underscore_idx = sample_id.index('_')
+                    if underscore_idx:
+                        sample_id = sample_id[underscore_idx+1:]
+                except:
+                    pass
+            searched_item = next((post for post in spot_check_posts if post['id'] == sample_id), None)
+            if searched_item:
+                # Some posts have an empty body, but the apify actor is filling in img/thumbnail in the text
+                # Consider that a match
+                text_ok = len(searched_item['text']) == 0 or searched_item['text'] == sample_item['text']
+                if(text_ok and searched_item['timestamp'] == sample_item['timestamp']):
+                    correct_score = 1
+                else:
+                    bt.logging.info(f"Tampered post! {sample_item}")
+                    bt.logging.info(f"Original post: {searched_item}")
+            else: 
+                bt.logging.info(f"No result returned for {sample_item}")
 
         # choose two itmems to compare
         try:
-            if len(response) > 0:
-                if (i in compare_list):
-                    correct_score = 0
-                    sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can conrtol k to change the number of samples
-                    sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
-                    for sample_item in sample_items:
-                        bt.logging.info(f"Attempting to verify post: {sample_item['url']}")
-                        try:
-                            searched_item = reddit_query.searchByUrl([sample_item['url']])
-                            if searched_item:
-                                if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
-                                    correct_score += 1
-                                else:
-                                    bt.logging.info(f"Tampered post! {sample_item}")
-                            else: 
-                                bt.logging.info(f"No result returned for {sample_item['url']}")
-                        except Exception as e:
-                            bt.logging.error(f"❌ Error while verifying post: {e}")
-                    correct_score /= len(sample_items)
             # calculate scores
             for i_item, item in enumerate(response):
                 if tag.lower() in item['text'].lower():
