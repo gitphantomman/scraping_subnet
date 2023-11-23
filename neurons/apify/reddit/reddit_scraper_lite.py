@@ -12,14 +12,11 @@ class RedditScraperLite:
         actor_config (ActorConfig): Configuration settings specific to the Apify actor.
     """
 
-    def __init__(self, actor_config: ActorConfig):
+    def __init__(self):
         """
-        Initialize the TweetFlushQuery with the provided actor configuration.
-
-        Args:
-            actor_config (ActorConfig): Configuration settings specific to the Apify actor.
+        Initialize the TweetFlushQuery.
         """
-        self.actor_config = actor_config
+        self.actor_config = ActorConfig("oAuCIx3ItNrs2okjQ")
 
     def searchByUrl(self, urls: list = ["https://twitter.com/elonmusk/status/1384874438472844800"]):
         """
@@ -98,13 +95,8 @@ class RedditScraperLite:
 
 
 if __name__ == '__main__':
-    # Define the Apify actor configuration
-    _config = ActorConfig("oAuCIx3ItNrs2okjQ")
-    # _config.api_key = "apify_api_PWSZ5jVZhtpANm6hPDVTFdPja4Gnqc4kfdd3"  # Caution: Avoid hardcoding API keys!
-    # _config.actor_id = "wHMoznVs94gOcxcZl"
-
-    # Initialize the tweet flush query mechanism with the actor configuration
-    query = RedditScraperLite(actor_config=_config)
+    # Initialize the RedditScraperLite query mechanism with the actor configuration
+    query = RedditScraperLite()
 
     # Execute the flush for the "bitcoin" search term
     data_set = query.execute(search_queries=["bitcoin"])

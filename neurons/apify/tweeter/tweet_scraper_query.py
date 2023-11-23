@@ -9,14 +9,11 @@ class TweetScraperQuery:
         actor_config (ActorConfig): Configuration settings specific to the Apify actor.
     """
 
-    def __init__(self, actor_config: ActorConfig):
+    def __init__(self):
         """
-        Initialize the TweetScraperQuery with the provided actor configuration.
-
-        Args:
-            actor_config (ActorConfig): Configuration settings specific to the Apify actor.
+        Initialize the TweetScraperQuery.
         """
-        self.actor_config = actor_config
+        self.actor_config = ActorConfig("2s3kSMq7tpuC3bI6M")
 
     def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
@@ -83,10 +80,7 @@ class TweetScraperQuery:
 
 
 if __name__ == '__main__':
-    # Define the Apify actor configuration
-    _config = ActorConfig("2s3kSMq7tpuC3bI6M")
-
-    # Initialize the tweet scraper query mechanism with the actor configuration
+    # Initialize the tweet scraper query mechanism
     query = TweetScraperQuery(actor_config=_config)
 
     # Execute the scraper for the "bitcoin" search term

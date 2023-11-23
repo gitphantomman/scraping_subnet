@@ -5,6 +5,7 @@ from neurons.apify.tweeter.tweet_flush_query import TweetFlushQuery
 from neurons.apify.tweeter.tweet_scraper_query import TweetScraperQuery
 from neurons.apify.reddit.reddit_scraper_lite import RedditScraperLite
 from neurons.apify.reddit.reddit_scraper import RedditScraper
+from neurons.apify.reddit.epctex_reddit_scraper import EpctexRedditScraper
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,6 +26,7 @@ class QueryProvider(Enum):
     TWEET_FLUSH = "apify_tweet_flush"
     REDDIT_SCRAPER_LITE = "apify_reddit_scraper_lite"
     REDDIT_SCRAPER = "apify_reddit_scraper"
+    EPCTEX_REDDIT_SCRAPER = "epctex_reddit_scraper"
 
 
 # Mapping between query types and their respective classes
@@ -32,7 +34,8 @@ QUERY_MAP = {
     (QueryType.TWITTER, QueryProvider.TWEET_SCRAPER): TweetScraperQuery,
     (QueryType.TWITTER, QueryProvider.TWEET_FLUSH): TweetFlushQuery,
     (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE): RedditScraperLite,
-    (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER): RedditScraper
+    (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER): RedditScraper,
+    (QueryType.REDDIT, QueryProvider.EPCTEX_REDDIT_SCRAPER): EpctexRedditScraper
 }
 
 
@@ -52,21 +55,11 @@ def get_query(query_type: QueryType, query_provider: QueryProvider):
     Exception: If an invalid query type or provider is given.
     """
 
-    # Construct the environment variable key to fetch the actor ID
-    actor_id_key = f"{query_provider.value.upper()}_ACTOR_ID"
-    actor_id = os.getenv(actor_id_key)
-
-    if actor_id is None:
-        raise Exception(f"Environment variable {actor_id_key} not set")
-
-    # Get the actor configuration
-    actor_config = ActorConfig(actor_id)
-
     # Get the query class from the mapping
     query_class = QUERY_MAP.get((query_type, query_provider))
 
     if query_class:
-        return query_class(actor_config)
+        return query_class()
     else:
         raise Exception("Invalid query type or query provider")
 
