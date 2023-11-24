@@ -4,9 +4,9 @@ from neurons.apify.actors import run_actor, ActorConfig
 # Setting up logger for debugging and information purposes
 logger = logging.getLogger(__name__)
 
-class TweetFlushQuery:
+class TweetFlashQuery:
     """
-    A class designed to flush tweets based on specific search queries using the Apify platform.
+    A class designed to query tweets based using the Tweet Flash actor on the Apify platform.
 
     Attributes:
         actor_config (ActorConfig): Configuration settings specific to the Apify actor.
@@ -14,16 +14,18 @@ class TweetFlushQuery:
 
     def __init__(self):
         """
-        Initialize the TweetFlushQuery.
+        Initialize the TweetFlashQuery.
         """
         self.actor_config = ActorConfig("wHMoznVs94gOcxcZl")
+        self.actor_config.memory_mbytes = 256
+        self.actor_config.timeout_secs = 1.5 * 60 # Default to 5 minutes timeout
+
 
     def searchByUrl(self, urls: list = ["https://twitter.com/elonmusk/status/1384874438472844800"]):
         """
-        Execute the tweet flushing process using the specified search queries.
+        Search for tweets by url.
         """
         run_input = {
-            "absolute_max_tweets": 1,
             "filter:blue_verified": False,
             "filter:has_engagement": False,
             "filter:images": False,
@@ -40,20 +42,22 @@ class TweetFlushQuery:
             "tweet_urls": urls,
             "use_experimental_scraper": False,
             "max_tweets": 1,
+            "num_threads": 5,
             "language": "any",
-            "user_info": "user info and replying info",
+            "user_info": "only user info",
             "max_attempts": 5
             }
         return self.map(run_actor(self.actor_config, run_input))
+    
     def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
-        Execute the tweet flushing process using the specified search queries.
+        Search for tweets using search terms.
 
         Args:
             search_queries (list, optional): A list of search terms to be queried. Defaults to ["bittensor"].
 
         Returns:
-            list: A list of flushed tweet data.
+            list: A list of tweets.
         """
         run_input = {
             "collect_user_info": False,
@@ -73,6 +77,7 @@ class TweetFlushQuery:
             "max_tweets": limit_number,
             "only_tweets": False,
             "queries": search_queries,
+            "num_threads": 1,
             "use_experimental_scraper": False,
             "language": "any",
             "user_info": "user info and replying info",
@@ -97,12 +102,26 @@ class TweetFlushQuery:
 
 
 if __name__ == '__main__':
-    # Initialize the tweet flush query mechanism
-    query = TweetFlushQuery()
+    # Initialize the tweet query mechanism
+    query = TweetFlashQuery()
 
-    # Execute the flush for the "bitcoin" search term
-    data_set = query.execute(search_queries=["bitcoin"])
+    # Execute the query for the "bitcoin" search term
+    data_set = query.execute(search_queries=["bitcoin"], limit_number=24)
 
-    # Output the flushed data
-    for item in data_set:
-        print(item)
+    urls = [tweet['url'] for tweet in data_set]
+    print(f"Fetched {len(urls)} urls: {urls}")
+
+    data_set = query.searchByUrl(urls=urls)
+
+    verified_urls = [tweet['url'] for tweet in data_set]
+
+    print(f"Verification returned {len(verified_urls)} tweets")
+    print(f"There are {len(set(verified_urls))} unique urls")
+
+    unverified = set(urls) - set(verified_urls)
+
+    print(f"Num unverified: {len(unverified)}: {unverified}")
+
+    # Output the tweet data
+    #for item in data_set:
+    #    print(item)

@@ -66,13 +66,13 @@ class EpctexRedditScraper:
 
     def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
-        Execute the tweet flushing process using the specified search queries.
+        Execute the tweet reddit query process using the specified search queries.
 
         Args:
             search_queries (list, optional): A list of search terms to be queried. Defaults to ["bittensor"].
 
         Returns:
-            list: A list of flushed tweet data.
+            list: A list of reddit posts.
         """
         run_input = {
             "customMapFunction": "(object) => { return {...object} }",
@@ -118,10 +118,10 @@ if __name__ == '__main__':
     # Initialize the EpctexRedditScraper query mechanism
     query = EpctexRedditScraper()
 
-    # Execute the flush for the "bitcoin" search term
+    # Execute the query for the "bitcoin" search term
     #data_set = query.execute(search_queries=["bitcoin"])
     data_set = query.searchByUrl(urls=["https://www.reddit.com/r/Arbitrum/comments/180jrqm/top_3_dapps/ka6t2dv/"])
 
-    # Output the flushed data
+    # Output the data
     for item in data_set:
         print(item)

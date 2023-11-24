@@ -20,7 +20,7 @@ class RedditScraper:
 
     def searchByUrl(self, urls: list = ["https://twitter.com/elonmusk/status/1384874438472844800"]):
         """
-        Execute the tweet flushing process using the specified search queries.
+        Search for reddit posts by url.
         """
         run_input = {
             "debugMode": False,
@@ -47,13 +47,13 @@ class RedditScraper:
         return self.map(run_actor(self.actor_config, run_input))
     def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
-        Execute the tweet flushing process using the specified search queries.
+        Execute the reddit post query process using the specified search queries.
 
         Args:
             search_queries (list, optional): A list of search terms to be queried. Defaults to ["bittensor"].
 
         Returns:
-            list: A list of flushed tweet data.
+            list: A list of reddit posts.
         """
         run_input = {
             "debugMode": False,
@@ -95,9 +95,9 @@ if __name__ == '__main__':
     # Initialize the reddit scraper query mechanism
     query = RedditScraper()
 
-    # Execute the flush for the "bitcoin" search term
+    # Execute the query for the "bitcoin" search term
     data_set = query.execute(search_queries=["bitcoin"])
 
-    # Output the flushed data
+    # Output the returned data
     for item in data_set:
         print(item)

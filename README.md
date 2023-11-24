@@ -68,7 +68,7 @@ You have to set environment variables in dotenv file. You can use the `.env.exam
 
 # Validator & Miner both MUST!
 APIFY_API_KEY=
-APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLUSH
+APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLASH
 APIFY_REDDIT_QUERY_PROVIDER=REDDIT_SCRAPER_LITE
 
 
@@ -131,16 +131,6 @@ You have to set environment variables in dotenv file. You can use the `.env.exam
 
 # Validator & Miner both MUST!
 APIFY_API_KEY=
-APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLUSH
-APIFY_REDDIT_QUERY_PROVIDER=REDDIT_SCRAPER_LITE
-APIFY_TWEET_FLUSH_ACTOR_ID=wHMoznVs94gOcxcZl
-APIFY_REDDIT_SCRAPER_LITE_ACTOR_ID=oAuCIx3ItNrs2okjQ
-
-# Validator & Miner Optional
-APIFY_TWEET_SCRAPER_ACTOR_ID=2s3kSMq7tpuC3bI6M
-APIFY_REDDIT_SCRAPER_ACTOR_ID=FgJtjDwJCLhRH9saM
-
-
 
 
 # Validator Must
