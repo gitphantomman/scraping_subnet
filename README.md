@@ -68,7 +68,7 @@ You have to set environment variables in dotenv file. You can use the `.env.exam
 
 # Validator & Miner both MUST!
 APIFY_API_KEY=
-APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLUSH
+APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLASH
 APIFY_REDDIT_QUERY_PROVIDER=REDDIT_SCRAPER_LITE
 
 
@@ -110,7 +110,7 @@ Tips for Optimizing Your Scraper:
 
 Validators perform several key tasks in the data mining process. They issue queries to miners, requesting specific data. Once the data is received, validators compute scores based on factors such as uniqueness, rarity, and volume. 
 
-The scoring process involves calculating a time score and a unique score for each piece of data. Validators also verify the authenticity of the data by running their own Apify scripts. This helps to ensure that the data is not fake and contains the correct search key.
+The scoring process involves calculating a time score and a unique score for each piece of data. Validators also verify the authenticity of the data by running their own Apify scripts. This helps to ensure that the data is not fake and contains the correct search key. To accommodate this, you must rent the [epctex/reddit-scraper actor on Apify](https://console.apify.com/actors/jwR5FKaWaGSmkeq2b/console).
 
 Once the data has been scored and verified, it is transferred to a shared storage system on Wasabi S3. Validators then update an indexing table, which is maintained using MongoDB. This table allows validators to efficiently access, search, and fetch data.
 
@@ -131,16 +131,6 @@ You have to set environment variables in dotenv file. You can use the `.env.exam
 
 # Validator & Miner both MUST!
 APIFY_API_KEY=
-APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLUSH
-APIFY_REDDIT_QUERY_PROVIDER=REDDIT_SCRAPER_LITE
-APIFY_TWEET_FLUSH_ACTOR_ID=wHMoznVs94gOcxcZl
-APIFY_REDDIT_SCRAPER_LITE_ACTOR_ID=oAuCIx3ItNrs2okjQ
-
-# Validator & Miner Optional
-APIFY_TWEET_SCRAPER_ACTOR_ID=2s3kSMq7tpuC3bI6M
-APIFY_REDDIT_SCRAPER_ACTOR_ID=FgJtjDwJCLhRH9saM
-
-
 
 
 # Validator Must

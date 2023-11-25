@@ -75,8 +75,7 @@ def calculateScore(responses = [], tag = 'tao'):
             response = []
             format_score[i] = 1
         id_list = []
-        for post in response:
-            
+        for post in response:  
             try:
                 # Check that 'text' and 'timestamp' fields exist
                 post['text'] and post['timestamp']
@@ -90,8 +89,6 @@ def calculateScore(responses = [], tag = 'tao'):
                 
             except:
                 format_score[i] = 1
-
-    samples_for_compare = []
 
     # Choose random responses from each miner to compare, and gather their urls
     spot_check_idx = []
@@ -151,7 +148,6 @@ def calculateScore(responses = [], tag = 'tao'):
             else: 
                 bt.logging.info(f"No result returned for {sample_item}")
 
-        # choose two itmems to compare
         try:
             # calculate scores
             for i_item, item in enumerate(response):

@@ -26,8 +26,16 @@ import random
 import bittensor as bt
 from urllib.parse import urlparse
 import os
+import re
 
-twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLUSH)
+twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLASH)
+
+from itertools import islice
+
+def chunk(it, size):
+    it = iter(it)
+    return iter(lambda: tuple(islice(it, size)), ())
+
 
 def calculateScore(responses = [], tag = 'tao'):
     """
@@ -102,16 +110,42 @@ def calculateScore(responses = [], tag = 'tao'):
             except:
                 format_score[i] = 1
 
-    samples_for_compare = []
-    try:
-
-        if (len(responses) > 5):
-            # * Choose 3 random responses to compare and return their index. You can change the number of samples by changing k
-            compare_list = random.sample(list(range(len(responses))), k=5)
+    # Choose random responses from each miner to compare, and gather their urls
+    spot_check_idx = []
+    spot_check_urls = []
+    spot_check_tweets = []
+    for i, response in enumerate(responses):
+        if len(response) > 0:
+            item_idx = random.randrange(len(response))
+            spot_check_idx.append(item_idx)
+            url = response[item_idx].get('url')
+            if url and re.search("(twitter.com|x.com)\/\w+\/status\/\d+", url):
+                spot_check_urls.append(url)
         else:
-            compare_list = list(range(len(responses)))
-    except:
-        pass
+            spot_check_idx.append(None)
+
+    # Fetch spot check urls
+    if len(spot_check_urls) > 0:
+        try:
+            spot_check_tweets = []
+            found_urls = set()
+            tries = 0
+            remaining_urls = set(spot_check_urls)
+            while tries < 5 and len(remaining_urls) > 3:
+                urls = random.sample(remaining_urls, k=min(10, len(remaining_urls)))
+                bt.logging.info(f"Validating {len(urls)}/{len(remaining_urls)} tweets.")
+                batch_tweets = twitter_query.searchByUrl(urls)
+                batch_urls = set([tweet['url'] for tweet in batch_tweets])
+                bt.logging.info(f"Fetched {len(batch_urls)}/{len(urls)} tweets.")
+                remaining_urls = remaining_urls - set(batch_urls)
+                spot_check_tweets += batch_tweets
+                tries += 1
+            found_urls = [tweet['url'] for tweet in spot_check_tweets]
+            missing_urls = set(spot_check_urls) - set(found_urls)
+            bt.logging.info(f"Missing {len(missing_urls)}/{len(spot_check_urls)} tweets.")
+        except Exception as e:
+            bt.logging.error(f"❌ Error while verifying post: {e}")
+
     # Calculate score for each response
     for i, response in enumerate(responses):
         # initialize variables
@@ -124,39 +158,30 @@ def calculateScore(responses = [], tag = 'tao'):
         if len(response) > max_length:
             max_length = len(response)
 
-        # choose two items to compare
-        try:
-            if len(response) > 0:
-                if (i in compare_list):
-                    correct_score = 0
-                    sample_indices = random.sample(list(range(len(response))), k=1) # * Create a list of index numbers. You can control k to change the number of samples
-                    sample_items = [response[j] for j in sample_indices] # Get the corresponding items from the response list
-                    for sample_item in sample_items:
-                        bt.logging.info(f"Attempting to verify tweet: {sample_item['url']}")
-                        try:
-                            searched_item = twitter_query.searchByUrl([sample_item['url']])
-                            if searched_item:
-                                if(searched_item[0]['text'] == sample_item['text'] and searched_item[0]['timestamp'] == sample_item['timestamp']):
-                                    correct_score += 1
-                                else:
-                                    bt.logging.info(f"Tampered tweet! {sample_item}")
-                            else: 
-                                bt.logging.info(f"No result returned for {sample_item['url']}")
-                        except Exception as e:
-                            bt.logging.error(f"❌ Error while verifying tweet: {e}")
-                    correct_score /= len(sample_items)
-            # calculate scores
-            for i_item, item in enumerate(response):
-                if tag.lower() in item['text'].lower():
-                    correct_search_result += 1
-                # calculate similarity score
-                similarity_score += (id_counts[item['id']] - 1)
-                # calculate time difference score
-                date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
-                time_diff = datetime.datetime.now() - date_object
-                time_diff_score += time_diff.seconds
-        except:
-            format_score[i] = 1
+        # Do spot check for this miner
+        correct_score = 0
+        if len(response) > 0:
+            sample_item = response[spot_check_idx[i]]
+            searched_item = next((tweet for tweet in spot_check_tweets if tweet['id'] == sample_item['id']), None)
+            if searched_item:
+                if(searched_item['text'] == sample_item['text'] and searched_item['timestamp'] == sample_item['timestamp']):
+                    correct_score = 1
+                else:
+                    bt.logging.info(f"Tampered tweet! {sample_item}")
+                    bt.logging.info(f"Original tweet: {searched_item}")
+            else: 
+                bt.logging.info(f"No result returned for {sample_item}")
+
+        # calculate scores
+        for i_item, item in enumerate(response):
+            if tag.lower() in item['text'].lower():
+                correct_search_result += 1
+            # calculate similarity score
+            similarity_score += (id_counts[item['id']] - 1)
+            # calculate time difference score
+            date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
+            time_diff = datetime.datetime.now() - date_object
+            time_diff_score += time_diff.seconds
 
         if max_similar_count < similarity_score:
             max_similar_count = similarity_score
@@ -176,13 +201,19 @@ def calculateScore(responses = [], tag = 'tao'):
         else:
             correct_search_result_list[i] = 0
 
-    
+    bt.logging.info(f"length_list: {length_list}")
+    bt.logging.info(f"correct_list: {correct_list}")
+    bt.logging.info(f"similarity_list: {similarity_list}")
 
     similarity_list = (similarity_list + 1) / (max_similar_count + 1)
     time_diff_list = (time_diff_list + 1) / (max_time_diff + 1)
     correct_list = (correct_list + 1) / (max_correct_score + 1)
     length_list = (length_list + 1) / (max_length + 1)
 
+    bt.logging.info(f"time_diff contribution: {(1 - time_diff_list) * 0.2}")
+    bt.logging.info(f"length contribution: {length_list * 0.3}")
+    bt.logging.info(f"similarity contribution: {(1 - similarity_list) * 0.3}")
+    bt.logging.info(f"correct_search contribution: {correct_search_result_list * 0.2}")
         
     score_list = ((1 - similarity_list) * 0.3  + (1 - time_diff_list) * 0.2 + length_list * 0.3 + correct_search_result_list * 0.2)
     for i, correct_list_item in enumerate(correct_list):

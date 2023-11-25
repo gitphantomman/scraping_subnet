@@ -14,13 +14,13 @@ class RedditScraperLite:
 
     def __init__(self):
         """
-        Initialize the TweetFlushQuery.
+        Initialize the RedditScraperLite.
         """
         self.actor_config = ActorConfig("oAuCIx3ItNrs2okjQ")
 
     def searchByUrl(self, urls: list = ["https://twitter.com/elonmusk/status/1384874438472844800"]):
         """
-        Execute the tweet flushing process using the specified search queries.
+        Search for reddit posts given a set of urls.
         """
         run_input = {
             "debugMode": False,
@@ -50,13 +50,13 @@ class RedditScraperLite:
         return self.map(run_actor(self.actor_config, run_input))
     def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
         """
-        Execute the tweet flushing process using the specified search queries.
+        Execute the reddit post query process using the specified search queries.
 
         Args:
             search_queries (list, optional): A list of search terms to be queried. Defaults to ["bittensor"].
 
         Returns:
-            list: A list of flushed tweet data.
+            list: A list of reddit posts.
         """
         run_input = {
             "debugMode": False,
@@ -98,9 +98,9 @@ if __name__ == '__main__':
     # Initialize the RedditScraperLite query mechanism with the actor configuration
     query = RedditScraperLite()
 
-    # Execute the flush for the "bitcoin" search term
+    # Execute the search for the "bitcoin" search term
     data_set = query.execute(search_queries=["bitcoin"])
 
-    # Output the flushed data
+    # Output the data
     for item in data_set:
         print(item)

@@ -1,8 +1,9 @@
 import os
 from enum import Enum
 from neurons.apify.actors import ActorConfig
-from neurons.apify.tweeter.tweet_flush_query import TweetFlushQuery
+from neurons.apify.tweeter.tweet_flash_query import TweetFlashQuery
 from neurons.apify.tweeter.tweet_scraper_query import TweetScraperQuery
+from neurons.apify.tweeter.web_harvester_twitter_scraper_query import WebHarvesterTwitterScraperQuery
 from neurons.apify.reddit.reddit_scraper_lite import RedditScraperLite
 from neurons.apify.reddit.reddit_scraper import RedditScraper
 from neurons.apify.reddit.epctex_reddit_scraper import EpctexRedditScraper
@@ -23,7 +24,8 @@ class QueryProvider(Enum):
     Enum representing the different providers of queries.
     """
     TWEET_SCRAPER = "apify_tweet_scraper"
-    TWEET_FLUSH = "apify_tweet_flush"
+    TWEET_FLASH = "apify_tweet_flash"
+    WEB_HARVESTER_TWITTER_SCRAPER = "web_harvester_twitter_scraper"
     REDDIT_SCRAPER_LITE = "apify_reddit_scraper_lite"
     REDDIT_SCRAPER = "apify_reddit_scraper"
     EPCTEX_REDDIT_SCRAPER = "epctex_reddit_scraper"
@@ -32,7 +34,8 @@ class QueryProvider(Enum):
 # Mapping between query types and their respective classes
 QUERY_MAP = {
     (QueryType.TWITTER, QueryProvider.TWEET_SCRAPER): TweetScraperQuery,
-    (QueryType.TWITTER, QueryProvider.TWEET_FLUSH): TweetFlushQuery,
+    (QueryType.TWITTER, QueryProvider.TWEET_FLASH): TweetFlashQuery,
+    (QueryType.TWITTER, QueryProvider.WEB_HARVESTER_TWITTER_SCRAPER): WebHarvesterTwitterScraperQuery,    
     (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE): RedditScraperLite,
     (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER): RedditScraper,
     (QueryType.REDDIT, QueryProvider.EPCTEX_REDDIT_SCRAPER): EpctexRedditScraper
