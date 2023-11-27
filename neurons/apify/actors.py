@@ -41,7 +41,7 @@ class ActorConfig:
         # self.api_key = os.environ.get('APIFY_API_KEY')  # Get the Apify API key from environment variable
         self.api_key = os.getenv("APIFY_API_KEY")
         self.actor_id = actor_id  # Actor ID
-        self.timeout_secs = 5 * 60 # Default to 5 minutes timeout
+        self.timeout_secs = 30
         self.memory_mbytes = None 
 
 
