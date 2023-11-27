@@ -18,7 +18,7 @@ class TweetFlashQuery:
         """
         self.actor_config = ActorConfig("wHMoznVs94gOcxcZl")
         self.actor_config.memory_mbytes = 256
-        self.actor_config.timeout_secs = 1.5 * 60 # Default to 5 minutes timeout
+        self.actor_config.timeout_secs = 30
 
 
     def searchByUrl(self, urls: list = ["https://twitter.com/elonmusk/status/1384874438472844800"]):

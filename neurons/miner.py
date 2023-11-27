@@ -85,7 +85,7 @@ def main( config ):
     This function takes the configuration and starts the miner.
     It sets up the necessary Bittensor objects, attaches the necessary functions to the axon, and starts the main loop.
     """
-    twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLUSH)
+    twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLASH)
     reddit_query = get_query(QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE)
     # Activating Bittensor's logging with the set configurations.
     bt.logging(config=config, logging_dir=config.full_path)
@@ -277,7 +277,7 @@ def main( config ):
                     bt.logging.warning(f"Could not set miner weight: {e}")
                     raise e
             # Below: Periodically update our knowledge of the network graph.
-            if step % 5 == 0:
+            if step % 60 == 0:
                 metagraph = subtensor.metagraph(config.netuid)
                 log =  (f'Step:{step} | '\
                         f'Block:{metagraph.block.item()} | '\

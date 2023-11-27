@@ -68,8 +68,6 @@ You have to set environment variables in dotenv file. You can use the `.env.exam
 
 # Validator & Miner both MUST!
 APIFY_API_KEY=
-APIFY_TWITTER_QUERY_PROVIDER=TWEET_FLASH
-APIFY_REDDIT_QUERY_PROVIDER=REDDIT_SCRAPER_LITE
 
 
 # Validator Must
