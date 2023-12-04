@@ -153,8 +153,7 @@ def main( config ):
 
     curr_block = subtensor.block
 
-    # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
-    scores = scores * (metagraph.total_stake < 1.024e3)
+
     # set all nodes without ips set to 0
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
     step = 0
@@ -190,7 +189,7 @@ def main( config ):
             scores = torch.cat((scores, new_scores))
             del new_scores
         # If there are less uids than scores, remove some weights.
-        queryable_uids = (metagraph.total_stake < 1.024e3)
+        queryable_uids = (metagraph.total_stake >= 0)
         bt.logging.info(f"queryable_uids:{queryable_uids}")
         
         # Remove the weights of miners that are not queryable.
@@ -356,11 +355,8 @@ def main( config ):
             if last_reset_weights_block + 1800 < current_block:
                 bt.logging.trace(f"Clearing weights for validators and nodes without IPs")
                 last_reset_weights_block = current_block
-                # scores = scores * metagraph.last_update > current_block - 600
 
-                # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
-                scores = scores * (metagraph.total_stake < 1.024e3) 
-
+                
                 # set all nodes without ips set to 0
                 scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
 
