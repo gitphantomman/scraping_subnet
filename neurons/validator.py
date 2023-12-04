@@ -153,6 +153,7 @@ def main( config ):
 
     curr_block = subtensor.block
 
+    # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
 
     # set all nodes without ips set to 0
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
