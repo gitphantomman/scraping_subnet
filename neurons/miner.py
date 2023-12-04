@@ -98,7 +98,6 @@ def main( config ):
     # Initialize Bittensor miner objects
     # These classes are vital to interact and function within the Bittensor network.
     bt.logging.info("Setting up bittensor objects.")
-    bt.logging.info(f"sdlfkjsldkfj:{config.neuron.not_set_weights}")
     # Wallet holds cryptographic information, ensuring secure transactions and communication.
     wallet = bt.wallet( config = config )
     bt.logging.info(f"Wallet: {wallet}")
