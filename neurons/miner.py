@@ -40,6 +40,7 @@ def get_config():
     parser = argparse.ArgumentParser()
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
+    parser.add_argument( '--neuron.not_set_weights', type=bool, default = True, help = "miners can set weights.")
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
     # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
@@ -51,7 +52,7 @@ def get_config():
     # Activating the parser to read any command-line inputs.
     # To print help message, run python3 neurons/miner.py --help
     config = bt.config(parser)
-
+    
     # Set up logging directory
     # Logging captures events for diagnosis or understanding miner's behavior.
     config.full_path = os.path.expanduser(
@@ -97,7 +98,7 @@ def main( config ):
     # Initialize Bittensor miner objects
     # These classes are vital to interact and function within the Bittensor network.
     bt.logging.info("Setting up bittensor objects.")
-
+    bt.logging.info(f"sdlfkjsldkfj:{config.neuron.not_set_weights}")
     # Wallet holds cryptographic information, ensuring secure transactions and communication.
     wallet = bt.wallet( config = config )
     bt.logging.info(f"Wallet: {wallet}")
@@ -250,7 +251,7 @@ def main( config ):
     step = 0
     while True:          
         try:
-            if subtensor.block - last_updated_block >= 100:
+            if subtensor.block - last_updated_block >= 100 and config.neuron.not_set_weights is False:
                 bt.logging.trace(f"Setting miner weight")
                 # find the uid that matches config.wallet.hotkey [meta.axons[N].hotkey == config.wallet.hotkey]
                 # set the weight of that uid to 1.0
