@@ -365,6 +365,12 @@ def main( config ):
             metagraph = subtensor.metagraph(config.netuid)
             torch.save(scores, scores_file)
             bt.logging.info(f"Saved weights to \"{scores_file}\"")
+            
+            # Check for auto update
+            if config.auto_update != "no":
+                if scraping.utils.update_repository(config.auto_update):
+                    bt.logging.success("🔁 Repository updated, exiting validator")
+                    exit(0)
             # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
             time.sleep(bt.__blocktime__ * 10)
 

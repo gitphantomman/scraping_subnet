@@ -17,12 +17,28 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE S
 DEALINGS IN THE SOFTWARE.
 """
 from typing import Optional, List, Dict
-
 import bittensor as bt
+import pydantic
 
-class RedditScrap(bt.Synapse):
+
+"""
+Represents a software version with major, minor, and patch components.
+"""
+class Version (pydantic.BaseModel):
+    major_version: Optional[int] = None
+    minor_version: Optional[int] = None
+    patch_version: Optional[int] = None
+
+"""
+Extends the Bittensor Synapse with an additional version attribute, 
+used for compatibility and version control in operations.
+"""
+class ScrapingSynapse ( bt.Synapse ):
+    version: Optional[Version] = None
+
+class RedditScrap(ScrapingSynapse):
     """
-    RedditScrap class inherits from bt.Synapse.
+    RedditScrap class inherits from ScrapingSynapse.
     It is used to scrape data from Reddit.
     """
     # Required request input, filled by sending dendrite caller.
@@ -39,9 +55,9 @@ class RedditScrap(bt.Synapse):
         # TODO: Add error handling for when scrap_output is None
         return self.scrap_output
 
-class TwitterScrap(bt.Synapse):
+class TwitterScrap(ScrapingSynapse):
     """
-    TwitterScrap class inherits from bt.Synapse.
+    TwitterScrap class inherits from ScrapingSynapse.
     It is used to scrape data from Twitter.
     """
     # Required request input, filled by sending dendrite caller.
@@ -57,9 +73,9 @@ class TwitterScrap(bt.Synapse):
         # TODO: Add error handling for when scrap_output is None
         return self.scrap_output
 
-class CheckMiner(bt.Synapse):
+class CheckMiner(ScrapingSynapse):
     """
-    CheckMiner class inherits from bt.Synapse.
+    CheckMiner class inherits from ScrapingSynapse.
     It is used to check the miner's status.
     """
     # Required request input, send url_hash for check

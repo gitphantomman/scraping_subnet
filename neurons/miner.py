@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 # Importing necessary libraries and modules
 import os
 import sys
+from threading import Thread
 import time
 import argparse
 import traceback
@@ -192,6 +193,17 @@ def main( config ):
         This function runs after the TwitterScrap synapse has been deserialized (i.e. after synapse.data is available).
         This function runs after the blacklist and priority functions have been called.
         """
+        # Version checking
+        if not scraping.utils.check_version(synapse.version, config.auto_update):
+            synapse.version = scraping.utils.get_my_version()
+            return synapse
+        
+        synapse.version = scraping.utils.get_my_version()
+        
+        # If update is scheduled, not accept any request
+        if scraping.utils.update_flag:
+            return synapse
+        
         bt.logging.info(f"required data: {synapse.scrap_input} \n")
         if synapse.scrap_input is not None:
             search_key = synapse.scrap_input["search_key"]
@@ -209,6 +221,17 @@ def main( config ):
         This function runs after the RedditScrap synapse has been deserialized (i.e. after synapse.data is available).
         This function runs after the blacklist and priority functions have been called.
         """
+        # Version checking
+        if not scraping.utils.check_version(synapse.version, config.auto_update):
+            synapse.version = scraping.utils.get_my_version()
+            return synapse
+        
+        synapse.version = scraping.utils.get_my_version()
+        
+        # If update is scheduled, not accept any request
+        if scraping.utils.update_flag:
+            return synapse
+        
         bt.logging.info(f"required data: {synapse.scrap_input} \n")
         if synapse.scrap_input is not None:
             search_key = synapse.scrap_input["search_key"]
@@ -243,6 +266,10 @@ def main( config ):
     # Start  starts the miner's axon, making it active on the network.
     bt.logging.info(f"Starting axon server on port: {config.axon.port}")
     axon.start()
+    
+    # Set up Auto Update
+    thread = Thread(target=scraping.utils.check_for_update, args=(config.auto_update, ))
+    thread.start()
 
     # Keep the miner alive
     # This loop maintains the miner's operations until intentionally stopped.
