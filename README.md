@@ -95,6 +95,7 @@ python miner.py
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
+    --neuron.not_set_weights # Miner cannot set weights. Default is true
 ```
 
 Tips for Optimizing Your Scraper:
