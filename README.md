@@ -96,6 +96,13 @@ python miner.py
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
     --neuron.not_set_weights # Miner cannot set weights. Default is true
+    --auto_update # Validators and miners enable auto-update. ("patch" for auto updating)
+```
+
+For example:
+
+```bash
+python neurons/miner.py --wallet.name test_miner --wallet.hotkey test_miner_1 --subtensor.network finney --netuid 3 --logging.debug --logging.trace --auto_update patch --neurons.not_set_weights False
 ```
 
 Tips for Optimizing Your Scraper:
@@ -155,8 +162,13 @@ python validator.py
     --wallet.name <your validator wallet>  # name of your wallet
     --wallet.hotkey <your validator hotkey> # hotkey name of your wallet
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
+    --auto_update # Validators and miners enable auto-update. ("patch" for auto updating)
 ```
 
+For example: 
+```bash
+python neurons/validator.py --wallet.name test_validator --wallet.hotkey test_validator_1 --subtensor.network finney --netuid 3 --auto_update patch --logging.debug --logging.trace
+```
 ---
 
 ## License
