@@ -315,6 +315,13 @@ def main( config ):
                         f'Incentive:{metagraph.I[my_subnet_uid]} | '\
                         f'Emission:{metagraph.E[my_subnet_uid]}')
                 bt.logging.info(log)
+            
+                # Check for auto update
+                if config.auto_update != "no":
+                    if scraping.utils.update_repository(config.auto_update):
+                        bt.logging.success("🔁 Repository updated, exiting miner")
+                        exit(0)
+            
             step += 1
             time.sleep(1)
 
