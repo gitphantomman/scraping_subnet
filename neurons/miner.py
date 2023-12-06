@@ -22,7 +22,6 @@ DEALINGS IN THE SOFTWARE.
 # Importing necessary libraries and modules
 import os
 import sys
-from threading import Thread
 import time
 import argparse
 import traceback
@@ -267,10 +266,6 @@ def main( config ):
     bt.logging.info(f"Starting axon server on port: {config.axon.port}")
     axon.start()
     
-    # Set up Auto Update
-    thread = Thread(target=scraping.utils.check_for_update, args=(config.auto_update, ))
-    thread.start()
-
     # Keep the miner alive
     # This loop maintains the miner's operations until intentionally stopped.
     bt.logging.info(f"Starting main loop")
