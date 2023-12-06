@@ -81,7 +81,7 @@ def update_repository(flag = 'patch'):
         new_major, new_minor, new_patch = new_version.split('.')
         major, minor, patch = scraping.__version__.split('.')
         if new_version != scraping.__version__:
-            os.system("python -e pip install -e .")
+            os.system("python3 -e pip install -e .")
         if major != new_major:
             return True
         if flag == 'major':
