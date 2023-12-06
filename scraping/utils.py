@@ -37,24 +37,18 @@ Args:
 Returns:
     bool: True if the versions match, False otherwise.
 """
-def check_version( version: scraping.protocol.Version, flag ) -> bool:
+def check_version( version: scraping.protocol.Version ) -> bool:
     global update_flag
     version_str = scraping.__version__
     major, minor, patch = version_str.split('.')
     other_version_str = f"{version.major_version}.{version.minor_version}.{version.patch_version}"
     if version.major_version != int(major):
         bt.logging.error("🔴 Major version mismatch", f"yours: {version_str}, other's: {other_version_str}")
-        if version.major_version > int(major) and flag != 'no':
-            set_update_flag()
         return False
     elif version.minor_version != int(minor):
         bt.logging.warning("🟡 Minor version mismatch", f"yours: {version_str}, other's: {other_version_str}")
-        if version.minor_version > int(minor) and (flag == 'minor' or flag == 'patch'):
-            set_update_flag()
     elif version.patch_version != int(patch):
         bt.logging.warning("🔵 Patch version mismatch", f"yours: {version_str}, other's: {other_version_str}")
-        if version.patch_version > int(patch) and flag == 'patch':
-            set_update_flag()
     return True
 
 

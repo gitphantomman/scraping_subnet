@@ -194,7 +194,7 @@ def main( config ):
         This function runs after the blacklist and priority functions have been called.
         """
         # Version checking
-        if not scraping.utils.check_version(synapse.version, config.auto_update):
+        if not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
         
@@ -222,7 +222,7 @@ def main( config ):
         This function runs after the blacklist and priority functions have been called.
         """
         # Version checking
-        if not scraping.utils.check_version(synapse.version, config.auto_update):
+        if not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
         
@@ -315,6 +315,13 @@ def main( config ):
                         f'Incentive:{metagraph.I[my_subnet_uid]} | '\
                         f'Emission:{metagraph.E[my_subnet_uid]}')
                 bt.logging.info(log)
+            
+                # Check for auto update
+                if config.auto_update != "no":
+                    if scraping.utils.update_repository(config.auto_update):
+                        bt.logging.success("🔁 Repository updated, exiting miner")
+                        exit(0)
+            
             step += 1
             time.sleep(1)
 
