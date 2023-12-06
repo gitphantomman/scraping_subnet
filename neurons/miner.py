@@ -194,7 +194,7 @@ def main( config ):
         This function runs after the blacklist and priority functions have been called.
         """
         # Version checking
-        if not scraping.utils.check_version(synapse.version, config.auto_update):
+        if not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
         
@@ -222,7 +222,7 @@ def main( config ):
         This function runs after the blacklist and priority functions have been called.
         """
         # Version checking
-        if not scraping.utils.check_version(synapse.version, config.auto_update):
+        if not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
         
