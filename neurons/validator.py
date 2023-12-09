@@ -160,7 +160,8 @@ def main( config ):
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
     step = 0
     
-    
+    # Fetch protocol version for inclusion in queries
+    my_version = scraping.utils.get_my_version()
 
     bt.logging.info(f"Initial scores: {scores}")
     bt.logging.info("Starting validator loop.")
@@ -217,7 +218,7 @@ def main( config ):
         bt.logging.info(f"filtered_uids:{filtered_uids}")
         dendrites_to_query = random.sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
         bt.logging.info(f"dendrites_to_query:{dendrites_to_query}")
-            
+
         
         # every 2 minutes, query the miners
         try:
@@ -233,7 +234,7 @@ def main( config ):
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
+                    scraping.protocol.TwitterScrap(scrap_input = {"search_key" : [search_key]}, version = my_version), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True, 
                     timeout = 60
@@ -296,7 +297,7 @@ def main( config ):
                 responses = dendrite.query(
                     filtered_axons,
                     # Construct a scraping query.
-                    scraping.protocol.RedditScrap(scrap_input = {"search_key" : [search_key]}), # Construct a scraping query.
+                    scraping.protocol.RedditScrap(scrap_input = {"search_key" : [search_key]}, version = my_version), # Construct a scraping query.
                     # All responses have the deserialize function called on them before returning.
                     deserialize = True,
                     timeout = 60 
