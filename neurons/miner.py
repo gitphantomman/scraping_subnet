@@ -193,7 +193,9 @@ def main( config ):
         This function runs after the blacklist and priority functions have been called.
         """
         # Version checking
-        if not scraping.utils.check_version(synapse.version):
+        if synapse.version is None:
+            bt.logging.info(f"Received request from validator without version")
+        elif not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
         
@@ -203,7 +205,7 @@ def main( config ):
         if scraping.utils.update_flag:
             return synapse
         
-        bt.logging.info(f"required data: {synapse.scrap_input} \n")
+        bt.logging.info(f"Search from validator(version={synapse.version}): {synapse.scrap_input} \n")
         if synapse.scrap_input is not None:
             search_key = synapse.scrap_input["search_key"]
         else:
