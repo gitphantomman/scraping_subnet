@@ -39,7 +39,7 @@ def get_config():
     """
     parser = argparse.ArgumentParser()
     # Adds override arguments for network and netuid.
-    parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
+    parser.add_argument( '--netuid', type = int, default = 3, help = "The chain subnet uid." )
     parser.add_argument( '--neuron.not_set_weights', type=bool, default = True, help = "miners can set weights.")
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
@@ -193,26 +193,27 @@ def main( config ):
         This function runs after the blacklist and priority functions have been called.
         """
         # Version checking
-        if not scraping.utils.check_version(synapse.version):
+        if synapse.version is None:
+            bt.logging.info(f"Received request from validator without version")
+        elif not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
-        
-        synapse.version = scraping.utils.get_my_version()
         
         # If update is scheduled, not accept any request
         if scraping.utils.update_flag:
             return synapse
         
-        bt.logging.info(f"required data: {synapse.scrap_input} \n")
-        if synapse.scrap_input is not None:
+        bt.logging.info(f"Search from validator(version={synapse.version}): {synapse.scrap_input} \n")
+        if synapse.scrap_input is not None and len(synapse.scrap_input) > 0:
             search_key = synapse.scrap_input["search_key"]
         else:
             search_key = [random_line()]
             bt.logging.info(f"picking random keyword: {search_key} \n")
 
         tweets = twitter_query.execute(search_key)
+        synapse.version = scraping.utils.get_my_version()        
         synapse.scrap_output = tweets
-        bt.logging.info(f"✅ success: number of twitter response data: {len(synapse.scrap_output)} \n")
+        bt.logging.info(f"✅ success: returning {len(synapse.scrap_output)} tweets\n")
         return synapse
     
     def redditScrap( synapse: scraping.protocol.RedditScrap) -> scraping.protocol.RedditScrap: 
@@ -221,18 +222,18 @@ def main( config ):
         This function runs after the blacklist and priority functions have been called.
         """
         # Version checking
-        if not scraping.utils.check_version(synapse.version):
+        if synapse.version is None:
+            bt.logging.info(f"Received request from validator without version")
+        elif not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
-        
-        synapse.version = scraping.utils.get_my_version()
         
         # If update is scheduled, not accept any request
         if scraping.utils.update_flag:
             return synapse
         
-        bt.logging.info(f"required data: {synapse.scrap_input} \n")
-        if synapse.scrap_input is not None:
+        bt.logging.info(f"Search from validator(version={synapse.version}): {synapse.scrap_input} \n")
+        if synapse.scrap_input is not None and len(synapse.scrap_input) > 0:
             search_key = synapse.scrap_input["search_key"]
         else:
             search_key = [random_line()]
@@ -240,7 +241,8 @@ def main( config ):
         # Fetch latest N posts from miner's local database.
         posts = reddit_query.execute(search_key)
         synapse.scrap_output = posts
-        bt.logging.info(f"✅ success: number of reddit response data: {len(synapse.scrap_output)} \n")
+        synapse.version = scraping.utils.get_my_version()        
+        bt.logging.info(f"✅ success: returning {len(synapse.scrap_output)} reddit posts\n")
         return synapse
 
     # Build and link miner functions to the axon.
