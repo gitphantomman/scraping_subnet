@@ -27,6 +27,7 @@ import bittensor as bt
 from urllib.parse import urlparse
 import os
 import re
+import html
 
 twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLASH)
 
@@ -35,6 +36,19 @@ from itertools import islice
 def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
+
+
+# Removes links, leading mentions, whitespace, and convert html entities
+def text_for_comparison(text):
+    # url shorteners can cause problems with tweet verification, so remove urls from the text comparison.
+    text = re.sub(r'(https?://)?\S+\.\S+\/?(\S+)?', '', text)
+    # Some scrapers put the mentions at the front of the text, remove them.
+    text = re.sub(r'^(@\w+\s*)+', '', text)
+    # And some trim trailing whitespace at the end of newlines, so ignore whitespace.
+    text = re.sub(r'\s+', '', text)
+    # And some have special characters escaped as html entities
+    return html.unescape(text)
+
 
 
 def calculateScore(responses = [], tag = 'tao'):
@@ -132,7 +146,7 @@ def calculateScore(responses = [], tag = 'tao'):
             tries = 0
             remaining_urls = set(spot_check_urls)
             while tries < 5 and len(remaining_urls) > 3:
-                urls = random.sample(remaining_urls, k=min(10, len(remaining_urls)))
+                urls = random.sample(remaining_urls, k=min(20, len(remaining_urls)))
                 bt.logging.info(f"Validating {len(urls)}/{len(remaining_urls)} tweets.")
                 batch_tweets = twitter_query.searchByUrl(urls)
                 batch_urls = set([tweet['url'] for tweet in batch_tweets])
@@ -164,13 +178,22 @@ def calculateScore(responses = [], tag = 'tao'):
             sample_item = response[spot_check_idx[i]]
             searched_item = next((tweet for tweet in spot_check_tweets if tweet['id'] == sample_item['id']), None)
             if searched_item:
-                if(searched_item['text'] == sample_item['text'] and searched_item['timestamp'] == sample_item['timestamp']):
+                # Normalize text to account for variations in scraped data.
+                miner_text = text_for_comparison(sample_item['text'])
+                verify_text = text_for_comparison(searched_item['text'])
+
+                # Some sources truncate time to the nearest minute.
+                # timestamp format is '2011-04-25 16:55:15+00:00', so drop the last
+                miner_timestamp = sample_item['timestamp'][:16]
+                verify_timestamp = searched_item['timestamp'][:16]
+
+                if(verify_text == miner_text and verify_timestamp == miner_timestamp):
                     correct_score = 1
                 else:
-                    bt.logging.info(f"Tampered tweet! {sample_item}")
+                    bt.logging.info(f"Tampered tweet! (idx = {i}) {sample_item}")
                     bt.logging.info(f"Original tweet: {searched_item}")
             else: 
-                bt.logging.info(f"No result returned for {sample_item}")
+                bt.logging.info(f"No result returned for {sample_item} (idx = {i})")
 
         # calculate scores
         for i_item, item in enumerate(response):
