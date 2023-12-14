@@ -145,8 +145,11 @@ def calculateScore(responses = [], tag = 'tao'):
         try:
             # calculate scores
             for i_item, item in enumerate(response):
-                if tag.lower() in item['text'].lower():
+                if tag.lower() in item['title'].lower():
                     relevant_count += 1
+                elif tag.lower() in item['text'].lower():
+                    relevant_count += 1
+
                 # calculate similarity score
                 similarity_score += (id_counts[item['id']] - 1)
                 # calculate time difference score
