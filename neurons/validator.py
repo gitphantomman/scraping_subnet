@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 import os
 import time
 import torch
+import csv
 import argparse
 import traceback
 import bittensor as bt
@@ -32,6 +33,8 @@ import score.reddit_score
 import score.twitter_score
 import storage.store
 from apify_client import ApifyClient
+from neurons.queries import get_query, QueryType, QueryProvider
+
 
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
@@ -44,6 +47,7 @@ def get_config():
 
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
+    parser.add_argument( '--save_scoring', type = bool, default = False, help = "Write scoring debug data to csv files" )
 
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
@@ -168,11 +172,9 @@ def main( config ):
     
     total_dendrites_per_query = 25
     minimum_dendrites_per_query = 3
-    last_updated_block = curr_block - (curr_block % 100)
+    last_updated_block = 0 #curr_block - (curr_block % 100)
     last_reset_weights_block = curr_block
 
-
-    
 
     # Main loop
     while True:
@@ -218,7 +220,6 @@ def main( config ):
         bt.logging.info(f"filtered_uids:{filtered_uids}")
         dendrites_to_query = random.sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
         bt.logging.info(f"dendrites_to_query:{dendrites_to_query}")
-
         
         # every 2 minutes, query the miners
         try:
@@ -228,7 +229,7 @@ def main( config ):
             # Broadcast a GET_DATA query to filtered miners on the network.
 
             # * every 10 minutes, query the miners for twitter data
-            if step % 4 == 0:
+            if step % 4 == 2:
                 search_key = random_line()
                 bt.logging.info(f"\033[92m 𝕏 ⏩ Sending tweeter query ({search_key}). \033[0m")
                 responses = dendrite.query(
@@ -244,8 +245,31 @@ def main( config ):
                 new_scores = []
                 try:
                     if(len(responses) > 0 and responses is not None):
-                        new_scores = score.twitter_score.calculateScore(responses = responses, tag = search_key)
+                        scoring_metrics = score.twitter_score.calculateScore(responses = responses, tag = search_key)
+                        for metric in scoring_metrics:
+                            bt.logging.info(f'{metric} = {scoring_metrics[metric]}')
+
+                        new_scores = scoring_metrics["normalized_scores"]
                         bt.logging.info(f"✅ new_scores: {new_scores}")
+
+                        if config.save_scoring:
+                            dir = f'twitter_block_{subtensor.block}'
+                            os.mkdir(dir)
+                            with open(f'{dir}/scoring.csv', 'w') as csvfile:
+                                writer = csv.writer(csvfile)
+                                writer.writerow(['uid'] + dendrites_to_query)
+                                for metric in scoring_metrics:
+                                    writer.writerow([metric] + list(v.item() for v in scoring_metrics[metric]))
+
+                            ranks = list(torch.argsort(new_scores))
+                            for idx, node in enumerate(dendrites_to_query):
+                                rank = ranks.index(idx)
+                                filename = f"{dir}/{search_key}_{rank}_{node}.json"
+                                bt.logging.info(f"Writing results to: {filename}")
+                                with open(filename , "w") as write:
+                                    json.dump(responses[idx], write)
+
+                        
                 except Exception as e:
                     bt.logging.error(f"❌ Error in twitterScore: {e}")
                 for i, score_i in enumerate(new_scores):
@@ -291,7 +315,7 @@ def main( config ):
                     else: bt.logging.error('Failed to set weights.')
 
             # Periodically update the weights on the Bittensor blockchain.
-            if step % 4 == 2:
+            if step % 4 == 0:
                 bt.logging.info(f"\033[92m ᕕ ⏩ Sending reddit query. \033[0m")
                 search_key = random_line()
                 responses = dendrite.query(
@@ -307,10 +331,34 @@ def main( config ):
                 new_scores = []
                 try:
                     if(len(responses) > 0 and responses is not None):
-                        new_scores = score.reddit_score.calculateScore(responses = responses, tag = search_key)
-                        # bt.logging.info(f"✅ new_scores: {new_scores}")
+                        scoring_metrics = score.reddit_score.calculateScore(responses = responses, tag = search_key)
+                        for metric in scoring_metrics:
+                            bt.logging.info(f'{metric} = {scoring_metrics[metric]}')
+
+                        new_scores = scoring_metrics["normalized_scores"]
+                        bt.logging.info(f"✅ new_scores: {new_scores}")
+
+                        if config.save_scoring:
+                            dir = f'reddit_block_{subtensor.block}'
+                            os.mkdir(dir)
+                            with open(f'{dir}/scoring.csv', 'w') as csvfile:
+                                writer = csv.writer(csvfile)
+                                writer.writerow(['uid'] + dendrites_to_query)
+                                for metric in scoring_metrics:
+                                    writer.writerow([metric] + list(v.item() for v in scoring_metrics[metric]))
+
+                            ranks = list(torch.argsort(new_scores))
+                            for idx, node in enumerate(dendrites_to_query):
+                                rank = ranks.index(idx)
+                                filename = f"{dir}/{search_key}_{rank}_{node}.json"
+                                bt.logging.info(f"Writing results to: {filename}")
+                                with open(filename , "w") as write:
+                                    json.dump(responses[idx], write)
+
                 except Exception as e:
                     bt.logging.error(f"❌ Error in redditScore: {e}")
+                    traceback.print_exc()
+
                 for i, score_i in enumerate(new_scores):
                     scores[dendrites_to_query[i]] = redditAlpha * scores[dendrites_to_query[i]] + (1 - redditAlpha) * score_i
                 bt.logging.info(f"\033[92m ✓ Updated Scores: {scores} \033[0m")

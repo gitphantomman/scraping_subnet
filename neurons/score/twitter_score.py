@@ -21,13 +21,13 @@ DEALINGS IN THE SOFTWARE.
 
 import torch
 import datetime
-from neurons.queries import get_query, QueryType, QueryProvider
 import random
 import bittensor as bt
 from urllib.parse import urlparse
 import os
 import re
 import html
+from neurons.queries import get_query, QueryType, QueryProvider
 
 twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLASH)
 
@@ -83,8 +83,7 @@ def calculateScore(responses = [], tag = 'tao'):
     correct_list = torch.ones(len(responses))
     total_length = 0
     max_length = 0
-    max_correct_search = 0
-    correct_search_result_list = torch.zeros(len(responses))
+    relevant_ratio = torch.zeros(len(responses))
 
     format_score = torch.zeros(len(responses))
     fake_score = torch.zeros(len(responses))
@@ -121,7 +120,8 @@ def calculateScore(responses = [], tag = 'tao'):
                     id_counts[tweet_id] += 1
                 else:
                     id_counts[tweet_id] = 1
-            except:
+            except Exception as e:
+                bt.logging.error(f"❌ Bad format for post: {e}, {tweet}")
                 format_score[i] = 1
 
     # Choose random responses from each miner to compare, and gather their urls
@@ -164,7 +164,7 @@ def calculateScore(responses = [], tag = 'tao'):
     for i, response in enumerate(responses):
         # initialize variables
         similarity_score = 0
-        correct_search_result = 0
+        relevant_count = 0
         time_diff_score = 0
         total_length += len(response)
         correct_score = 1
@@ -193,12 +193,12 @@ def calculateScore(responses = [], tag = 'tao'):
                     bt.logging.info(f"Tampered tweet! (idx = {i}) {sample_item}")
                     bt.logging.info(f"Original tweet: {searched_item}")
             else: 
-                bt.logging.info(f"No result returned for {sample_item} (idx = {i})")
+                bt.logging.info(f"No result returned for {sample_item} (miner_idx={i})")
 
         # calculate scores
         for i_item, item in enumerate(response):
             if tag.lower() in item['text'].lower():
-                correct_search_result += 1
+                relevant_count += 1
             # calculate similarity score
             similarity_score += (id_counts[item['id']] - 1)
             # calculate time difference score
@@ -212,33 +212,32 @@ def calculateScore(responses = [], tag = 'tao'):
             max_time_diff = time_diff_score
         if max_correct_score < correct_score:
             max_correct_score = correct_score
-        if max_correct_search < correct_search_result:
-            max_correct_search = correct_search_result
 
         similarity_list[i] = similarity_score
         time_diff_list[i] = time_diff_score
         length_list[i] = len(response)
         correct_list[i] = correct_score
-        if len(response) > 0:
-            correct_search_result_list[i] = correct_search_result / len(response)
-        else:
-            correct_search_result_list[i] = 0
 
-    bt.logging.info(f"length_list: {length_list}")
-    bt.logging.info(f"correct_list: {correct_list}")
-    bt.logging.info(f"similarity_list: {similarity_list}")
+        if len(response) > 0:
+            relevant_ratio[i] = relevant_count / len(response)
+        else:
+            relevant_ratio[i] = 0
+
 
     similarity_list = (similarity_list + 1) / (max_similar_count + 1)
     time_diff_list = (time_diff_list + 1) / (max_time_diff + 1)
     correct_list = (correct_list + 1) / (max_correct_score + 1)
-    length_list = (length_list + 1) / (max_length + 1)
+    length_normalized = (length_list + 1) / (max_length + 1)
 
-    bt.logging.info(f"time_diff contribution: {(1 - time_diff_list) * 0.2}")
-    bt.logging.info(f"length contribution: {length_list * 0.3}")
-    bt.logging.info(f"similarity contribution: {(1 - similarity_list) * 0.3}")
-    bt.logging.info(f"correct_search contribution: {correct_search_result_list * 0.2}")
-        
-    score_list = ((1 - similarity_list) * 0.3  + (1 - time_diff_list) * 0.2 + length_list * 0.3 + correct_search_result_list * 0.2)
+    time_diff_contribution = (1 - time_diff_list) * 0.2
+    length_contribution = length_normalized * 0.3
+    similarity_contribution = (1 - similarity_list) * 0.3
+    relevancy_contribution = relevant_ratio * 0.2
+
+    score_list = (similarity_contribution + time_diff_contribution + length_contribution + relevancy_contribution)
+
+    pre_filtered_score = score_list.clone()
+
     for i, correct_list_item in enumerate(correct_list):
         if correct_list_item < 1:
             score_list[i] = 0
@@ -246,15 +245,38 @@ def calculateScore(responses = [], tag = 'tao'):
             score_list[i] = 0
         if fake_score[i] == 1:
             score_list[i] = 0
+        if relevant_ratio[i] < 0.5:
+            score_list[i] = 0
+
     for i, response in enumerate(responses):
         if response == [] or response == None:
             score_list[i] = 0
     # normalize score list
+            
+    filtered_scores = score_list.clone()
+
     if torch.sum(score_list) == 0:
         pass
     else:
-        score_list = score_list / torch.sum(score_list)
-    return score_list
+        normalized_scores = score_list / torch.sum(score_list)
+
+    scoring_metrics = {
+        "correct": correct_list,
+        "similarity": similarity_list,
+        "time_diff": time_diff_list,
+        "time_contrib": time_diff_contribution,
+        "length": length_list,
+        "length_contrib": length_contribution,
+        "similarity_contrib": similarity_contribution,
+        "relevancy_contrib": relevancy_contribution,
+        "format": format_score,
+        "fake": fake_score,
+        "pre_filtered_score": pre_filtered_score,
+        "filtered_scores": filtered_scores,
+        "normalized_scores": normalized_scores,
+    }
+
+    return scoring_metrics
         
 
 
