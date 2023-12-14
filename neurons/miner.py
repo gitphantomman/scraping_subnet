@@ -109,10 +109,15 @@ def main( config ):
 
     # metagraph provides the network's current state, holding state about other participants in a subnet.
     metagraph = bt.metagraph(network=subtensor.network, netuid=config.netuid, sync=False)
-    metagraph.load()
-    if subtensor.block - metagraph.block.item() > 5:
-        bt.logging.info(f"Cached metagraph is old, syncing with subtensor")
+    try:
+        metagraph.load()
+        bt.logging.info(f"Updated metagraph from cache.")
+    except Exception as e:
         metagraph = subtensor.metagraph(config.netuid)
+
+    if subtensor.block - metagraph.block.item() > 5:
+        metagraph = subtensor.metagraph(config.netuid)
+        bt.logging.info(f"Cached metagraph is old, syncing with subtensor")
 
     bt.logging.info(f"Metagraph: {metagraph}")
 
@@ -308,7 +313,16 @@ def main( config ):
                     raise e
             # Below: Periodically update our knowledge of the network graph.
             if step % 60 == 0:
-                metagraph = subtensor.metagraph(config.netuid)
+                try:
+                    metagraph.load()
+                    bt.logging.info(f"Updated metagraph from cache.")
+                except Exception as e:
+                    metagraph = subtensor.metagraph(config.netuid)
+                    
+                if subtensor.block - metagraph.block.item() > 5:
+                    bt.logging.info(f"Metagraph is old, syncing with subtensor")
+                    metagraph = subtensor.metagraph(config.netuid)
+
                 log =  (f'Step:{step} | '\
                         f'Block:{metagraph.block.item()} | '\
                         f'Stake:{metagraph.S[my_subnet_uid]} | '\
@@ -318,13 +332,6 @@ def main( config ):
                         f'Incentive:{metagraph.I[my_subnet_uid]} | '\
                         f'Emission:{metagraph.E[my_subnet_uid]}')
                 bt.logging.info(log)
-
-                metagraph.load()
-                if subtensor.block - metagraph.block.item() > 5:
-                    bt.logging.info(f"Saved metagraph is old, syncing with subtensor")
-                    metagraph = subtensor.metagraph(config.netuid)
-                else:
-                    bt.logging.info(f"Updated metagraph from cache.")
             
                 # Check for auto update
                 if config.auto_update != "no":
