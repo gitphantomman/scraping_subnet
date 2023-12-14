@@ -29,7 +29,7 @@ import bittensor as bt
 import scraping
 from typing import Tuple
 import torch
-from neurons.apify.queries import get_query, QueryType, QueryProvider
+from neurons.queries import get_query, QueryType, QueryProvider
 # TODO: Check if all the necessary libraries are installed and up-to-date
 
 def get_config():
