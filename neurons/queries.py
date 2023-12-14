@@ -7,6 +7,7 @@ from neurons.apify.tweeter.web_harvester_twitter_scraper_query import WebHarvest
 from neurons.apify.reddit.reddit_scraper_lite import RedditScraperLite
 from neurons.apify.reddit.reddit_scraper import RedditScraper
 from neurons.apify.reddit.epctex_reddit_scraper import EpctexRedditScraper
+from neurons.services.percipio_reddit_lookup import PercipioRedditLookup
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,6 +30,7 @@ class QueryProvider(Enum):
     REDDIT_SCRAPER_LITE = "apify_reddit_scraper_lite"
     REDDIT_SCRAPER = "apify_reddit_scraper"
     EPCTEX_REDDIT_SCRAPER = "epctex_reddit_scraper"
+    PERCIPIO_REDDIT_LOOKUP = "percipio_reddit_lookup"
 
 
 # Mapping between query types and their respective classes
@@ -38,7 +40,8 @@ QUERY_MAP = {
     (QueryType.TWITTER, QueryProvider.WEB_HARVESTER_TWITTER_SCRAPER): WebHarvesterTwitterScraperQuery,    
     (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE): RedditScraperLite,
     (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER): RedditScraper,
-    (QueryType.REDDIT, QueryProvider.EPCTEX_REDDIT_SCRAPER): EpctexRedditScraper
+    (QueryType.REDDIT, QueryProvider.EPCTEX_REDDIT_SCRAPER): EpctexRedditScraper,
+    (QueryType.REDDIT, QueryProvider.PERCIPIO_REDDIT_LOOKUP): PercipioRedditLookup
 }
 
 

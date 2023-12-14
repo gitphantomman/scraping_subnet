@@ -22,11 +22,11 @@ DEALINGS IN THE SOFTWARE.
 import torch
 import datetime
 import bittensor as bt
-from neurons.apify.queries import get_query, QueryType, QueryProvider
+from neurons.queries import get_query, QueryType, QueryProvider
 import random
 from dateutil.parser import parse
 
-reddit_query = get_query(QueryType.REDDIT, QueryProvider.EPCTEX_REDDIT_SCRAPER)
+reddit_query = get_query(QueryType.REDDIT, QueryProvider.PERCIPIO_REDDIT_LOOKUP)
 
 def calculateScore(responses = [], tag = 'tao'):
     """
@@ -92,23 +92,23 @@ def calculateScore(responses = [], tag = 'tao'):
 
     # Choose random responses from each miner to compare, and gather their urls
     spot_check_idx = []
-    spot_check_urls = []
+    spot_check_ids = []
     spot_check_posts = []
     for i, response in enumerate(responses):
         if len(response) > 0:
             item_idx = random.randrange(len(response))
             spot_check_idx.append(item_idx)
-            url = response[item_idx].get('url')
-            if url is not None:
-                spot_check_urls.append(url)
+            spot_check_id = response[item_idx].get('id')
+            if spot_check_id is not None:
+                spot_check_ids.append(spot_check_id)
         else:
             spot_check_idx.append(None)
 
     # Fetch spot check urls
-    if len(spot_check_urls) > 0:
+    if len(spot_check_ids) > 0:
         try:
-            bt.logging.info(f"Validating {len(spot_check_urls)} posts.")
-            spot_check_posts = reddit_query.searchByUrl(spot_check_urls)
+            bt.logging.info(f"Validating {len(spot_check_ids)} posts.")
+            spot_check_posts = reddit_query.lookup(set(spot_check_ids))
         except Exception as e:
             bt.logging.error(f"❌ Error while verifying post: {e}")
 
@@ -128,13 +128,6 @@ def calculateScore(responses = [], tag = 'tao'):
         if len(response) > 0:
             sample_item = response[spot_check_idx[i]]
             sample_id = sample_item.get('id', "")
-            if sample_item.get('dataType', 'post') != 'post':
-                try:
-                    underscore_idx = sample_id.index('_')
-                    if underscore_idx:
-                        sample_id = sample_id[underscore_idx+1:]
-                except:
-                    pass
             searched_item = next((post for post in spot_check_posts if post['id'] == sample_id), None)
             if searched_item:
                 # Some posts have an empty body, but the apify actor is filling in img/thumbnail in the text

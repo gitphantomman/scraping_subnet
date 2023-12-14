@@ -21,7 +21,7 @@ DEALINGS IN THE SOFTWARE.
 
 import torch
 import datetime
-from neurons.apify.queries import get_query, QueryType, QueryProvider
+from neurons.queries import get_query, QueryType, QueryProvider
 import random
 import bittensor as bt
 from urllib.parse import urlparse
