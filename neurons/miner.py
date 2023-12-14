@@ -41,6 +41,7 @@ def get_config():
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 3, help = "The chain subnet uid." )
     parser.add_argument( '--neuron.not_set_weights', type=bool, default = True, help = "miners can set weights.")
+    parser.add_argument( '--auto-update', type = str, default = True, help = "Set to \"no\" to disable auto update.")
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
     # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
@@ -107,7 +108,12 @@ def main( config ):
     bt.logging.info(f"Subtensor: {subtensor}")
 
     # metagraph provides the network's current state, holding state about other participants in a subnet.
-    metagraph = subtensor.metagraph(config.netuid)
+    metagraph = bt.metagraph(network=subtensor.network, netuid=config.netuid, sync=False)
+    metagraph.load()
+    if subtensor.block - metagraph.block.item() > 5:
+        bt.logging.info(f"Cached metagraph is old, syncing with subtensor")
+        metagraph = subtensor.metagraph(config.netuid)
+
     bt.logging.info(f"Metagraph: {metagraph}")
 
     last_updated_block = subtensor.block - 100
@@ -312,6 +318,13 @@ def main( config ):
                         f'Incentive:{metagraph.I[my_subnet_uid]} | '\
                         f'Emission:{metagraph.E[my_subnet_uid]}')
                 bt.logging.info(log)
+
+                metagraph.load()
+                if subtensor.block - metagraph.block.item() > 5:
+                    bt.logging.info(f"Saved metagraph is old, syncing with subtensor")
+                    metagraph = subtensor.metagraph(config.netuid)
+                else:
+                    bt.logging.info(f"Updated metagraph from cache.")
             
                 # Check for auto update
                 if config.auto_update != "no":
