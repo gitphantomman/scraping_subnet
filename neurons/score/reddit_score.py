@@ -145,7 +145,7 @@ def calculateScore(responses = [], tag = 'tao'):
         try:
             # calculate scores
             for i_item, item in enumerate(response):
-                if tag.lower() in item['title'].lower():
+                if tag.lower() in item.get('title', '').lower():
                     relevant_count += 1
                 elif tag.lower() in item['text'].lower():
                     relevant_count += 1
@@ -158,7 +158,8 @@ def calculateScore(responses = [], tag = 'tao'):
                 date_object = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
                 time_diff = datetime.datetime.now() - date_object
                 time_diff_score += time_diff.seconds
-        except:
+        except Exception as e:
+            bt.logging.info(f"Bad format: {e}")
             format_score[i] = 1
 
         if max_similar_count < similarity_score:
@@ -213,7 +214,7 @@ def calculateScore(responses = [], tag = 'tao'):
     # normalize score list
 
     if torch.sum(score_list) == 0:
-        pass
+        normalized_scores = score_list
     else:
         normalized_scores = score_list / torch.sum(score_list)
 
