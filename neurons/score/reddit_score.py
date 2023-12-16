@@ -76,8 +76,8 @@ def calculateScore(responses = [], tag = 'tao'):
         id_list = []
         for post in response:  
             try:
-                # Check that 'text' and 'timestamp' fields exist
-                post['text'] and post['timestamp']
+                # Check that 'text', 'timestamp' and 'dataType' fields exist
+                post['text'] and post['timestamp'] and post['dataType']
                 if post['id'] in id_list:
                     bt.logging.info(f"Duplicated id found: {post['id']} in response {i}")
                     fake_score[i] = 1
@@ -133,8 +133,9 @@ def calculateScore(responses = [], tag = 'tao'):
             if searched_item:
                 # Some posts have an empty body, but the apify actor is filling in img/thumbnail in the text
                 # Consider that a match
+                title_ok = searched_item['dataType'] != "post" or searched_item.get('title') == sample_item.get('title')
                 text_ok = len(searched_item['text']) == 0 or searched_item['text'] == sample_item['text']
-                if(text_ok and searched_item['timestamp'] == sample_item['timestamp']):
+                if(title_ok and text_ok and searched_item['timestamp'] == sample_item['timestamp']):
                     correct_score = 1
                 else:
                     bt.logging.info(f"Tampered post! {sample_item}")
