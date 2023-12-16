@@ -29,6 +29,7 @@ import traceback
 import bittensor as bt
 import scraping
 import json
+import sys
 import score.reddit_score
 import score.twitter_score
 import storage.store
@@ -80,8 +81,8 @@ import random
 
 def random_line(a_file="keywords.txt"):
     if not os.path.exists(a_file):
-        print(f"Keyword file not found at location: {a_file}")
-        quit()
+        bt.logging.error(f"Keyword file not found at location: {a_file}")
+        exit(1)
     lines = open(a_file).read().splitlines()
     return random.choice(lines)
 
