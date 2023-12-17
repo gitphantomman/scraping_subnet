@@ -256,7 +256,7 @@ def calculateScore(responses = [], tag = 'tao'):
     filtered_scores = score_list.clone()
 
     if torch.sum(score_list) == 0:
-        pass
+        normalized_scores = score_list
     else:
         normalized_scores = score_list / torch.sum(score_list)
 
