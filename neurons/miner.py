@@ -117,7 +117,7 @@ def main( config ):
 
     if subtensor.block - metagraph.block.item() > 5:
         metagraph = subtensor.metagraph(config.netuid)
-        bt.logging.info(f"Cached metagraph is old, syncing with subtensor")
+        bt.logging.info(f"Saved metagraph is old, syncing with subtensor")
 
     bt.logging.info(f"Metagraph: {metagraph}")
 
@@ -203,25 +203,30 @@ def main( config ):
         This function runs after the TwitterScrap synapse has been deserialized (i.e. after synapse.data is available).
         This function runs after the blacklist and priority functions have been called.
         """
+        validator_uid = metagraph.hotkeys.index( synapse.dendrite.hotkey )
+
         # Version checking
+        validator_version_str=None
         if synapse.version is None:
-            bt.logging.info(f"Received request from validator without version")
+            bt.logging.info(f"Received twitterScrap request from validator without version (validator uid = {validator_uid})")
         elif not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
+        else:
+            validator_version_str = f"{synapse.version.major_version}.{synapse.version.minor_version}.{synapse.version.patch_version}"
         
         # If update is scheduled, not accept any request
         if scraping.utils.update_flag:
             return synapse
         
-        bt.logging.info(f"Search from validator(version={synapse.version}): {synapse.scrap_input} \n")
+        bt.logging.info(f"Search from validator(version={validator_version_str}): {synapse.scrap_input} \n")
         if synapse.scrap_input is not None and len(synapse.scrap_input) > 0:
             search_key = synapse.scrap_input["search_key"]
         else:
             search_key = [random_line()]
             bt.logging.info(f"picking random keyword: {search_key} \n")
 
-        tweets = twitter_query.execute(search_key)
+        tweets = twitter_query.execute(search_key, 15, synapse.dendrite.hotkey, validator_version_str, my_subnet_uid)
         synapse.version = scraping.utils.get_my_version()        
         synapse.scrap_output = tweets
         bt.logging.info(f"✅ success: returning {len(synapse.scrap_output)} tweets\n")
@@ -232,25 +237,30 @@ def main( config ):
         This function runs after the RedditScrap synapse has been deserialized (i.e. after synapse.data is available).
         This function runs after the blacklist and priority functions have been called.
         """
+        validator_uid = metagraph.hotkeys.index( synapse.dendrite.hotkey )
+
         # Version checking
+        validator_version_str=None
         if synapse.version is None:
-            bt.logging.info(f"Received request from validator without version")
+            bt.logging.info(f"Received redditScrap request from validator without version (validator uid = {validator_uid})")
         elif not scraping.utils.check_version(synapse.version):
             synapse.version = scraping.utils.get_my_version()
             return synapse
+        else:
+            validator_version_str = f"{synapse.version.major_version}.{synapse.version.minor_version}.{synapse.version.patch_version}"
         
         # If update is scheduled, not accept any request
         if scraping.utils.update_flag:
             return synapse
         
-        bt.logging.info(f"Search from validator(version={synapse.version}): {synapse.scrap_input} \n")
+        bt.logging.info(f"Search from validator(version={validator_version_str}): {synapse.scrap_input} \n")
         if synapse.scrap_input is not None and len(synapse.scrap_input) > 0:
             search_key = synapse.scrap_input["search_key"]
         else:
             search_key = [random_line()]
             bt.logging.info(f"picking random keyword: {search_key} \n")
         # Fetch latest N posts from miner's local database.
-        posts = reddit_query.execute(search_key)
+        posts = reddit_query.execute(search_key, 15, synapse.dendrite.hotkey, validator_version_str, my_subnet_uid)
         synapse.scrap_output = posts
         synapse.version = scraping.utils.get_my_version()        
         bt.logging.info(f"✅ success: returning {len(synapse.scrap_output)} reddit posts\n")

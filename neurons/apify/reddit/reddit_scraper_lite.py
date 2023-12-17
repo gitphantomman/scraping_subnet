@@ -48,7 +48,7 @@ class RedditScraperLite:
             ]
             }
         return self.map(run_actor(self.actor_config, run_input))
-    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
+    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15, validator_key: str = "None", validator_version: str = None, miner_uid: int = 0) -> list:
         """
         Execute the reddit post query process using the specified search queries.
 
@@ -90,7 +90,17 @@ class RedditScraperLite:
         Returns:
             list: The mapped or transformed data.
         """
-        filtered_input = [{'id': item['id'], 'url': item['url'], 'text': item['body'], 'likes': item['upVotes'], 'dataType': item['dataType'], 'timestamp': item['createdAt']} for item in input]
+        filtered_input = [{
+            'id': item['id'], 
+            'url': item['url'], 
+            'text': item['body'], 
+            'likes': item['upVotes'], 
+            'dataType': item['dataType'], 
+            'community': item['communityName'],
+            'username': item['username'],
+            'parent': item.get('parentId'),
+            'timestamp': item['createdAt']
+        } for item in input]
         return filtered_input
 
 
