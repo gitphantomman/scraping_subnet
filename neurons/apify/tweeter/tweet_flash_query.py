@@ -49,7 +49,7 @@ class TweetFlashQuery:
             }
         return self.map(run_actor(self.actor_config, run_input))
     
-    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15) -> list:
+    def execute(self, search_queries: list = ["bittensor"], limit_number: int = 15, validator_key: str = "None", validator_version: str = None, miner_uid: int = 0) -> list:
         """
         Search for tweets using search terms.
 
@@ -97,7 +97,16 @@ class TweetFlashQuery:
         Returns:
             list: The mapped or transformed data.
         """
-        filtered_input = [{'id': item['tweet_id'], 'url': item['url'], 'text': item['text'], 'likes': item['likes'], 'images': item['images'], 'timestamp': item['timestamp']} for item in input]
+        filtered_input = [{
+            'id': item['tweet_id'], 
+            'url': item['url'], 
+            'text': item['text'], 
+            'likes': item['likes'], 
+            'images': item['images'], 
+            'username': item['username'],
+            'hashtags': item['tweet_hashtags'],
+            'timestamp': item['timestamp']
+        } for item in input]
         return filtered_input
 
 
