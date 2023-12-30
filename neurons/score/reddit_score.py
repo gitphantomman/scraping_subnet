@@ -131,9 +131,14 @@ def calculateScore(responses = [], tag = 'tao'):
             sample_id = sample_item.get('id', "")
             searched_item = next((post for post in spot_check_posts if post['id'] == sample_id), None)
             if searched_item:
+                if searched_item['dataType'] == "post" and searched_item.get('title') == sample_item.get('title'):
+                    title_ok = True
+                elif searched_item['dataType'] == "comment" and not searched_item.get('title'):
+                    title_ok = True
+                else:
+                    title_ok = False
                 # Some posts have an empty body, but the apify actor is filling in img/thumbnail in the text
                 # Consider that a match
-                title_ok = searched_item['dataType'] != "post" or searched_item.get('title') == sample_item.get('title')
                 text_ok = len(searched_item['text']) == 0 or searched_item['text'] == sample_item['text']
                 if(title_ok and text_ok and searched_item['timestamp'] == sample_item['timestamp']):
                     correct_score = 1
