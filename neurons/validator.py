@@ -252,23 +252,24 @@ def main( config ):
 
                         new_scores = scoring_metrics["normalized_scores"]
                         bt.logging.info(f"✅ new_scores: {new_scores}")
+                        scoring_metrics["uid"] = dendrites_to_query
+                        scoring_metrics['search_key'] = search_key
+                        scoring_metrics['validator_hotkey'] = metagraph.hotkeys[my_subnet_uid]
+                        scoring_metrics['block'] = subtensor.block
 
                         if config.save_scoring:
                             dir = f'twitter_block_{subtensor.block}'
                             os.mkdir(dir)
-                            with open(f'{dir}/scoring.csv', 'w') as csvfile:
-                                writer = csv.writer(csvfile)
-                                writer.writerow(['uid'] + dendrites_to_query)
-                                for metric in scoring_metrics:
-                                    writer.writerow([metric] + list(v.item() for v in scoring_metrics[metric]))
+                            with open(f'{dir}/scoring.json', 'w') as output:
+                                json.dump(scoring_metrics, output)
 
-                            ranks = list(torch.argsort(new_scores))
                             for idx, node in enumerate(dendrites_to_query):
-                                rank = ranks.index(idx)
-                                filename = f"{dir}/{search_key}_{rank}_{node}.json"
+                                filename = f"{dir}/{search_key}_{node}.json"
                                 bt.logging.info(f"Writing results to: {filename}")
                                 with open(filename , "w") as write:
                                     json.dump(responses[idx], write)
+
+                        storage.store.store_scoring_metrics(scoring_metrics, 'twitter')
 
                         
                 except Exception as e:
@@ -338,23 +339,25 @@ def main( config ):
 
                         new_scores = scoring_metrics["normalized_scores"]
                         bt.logging.info(f"✅ new_scores: {new_scores}")
+                        scoring_metrics["uid"] = dendrites_to_query
+                        scoring_metrics['search_key'] = search_key
+                        scoring_metrics['validator_hotkey'] = metagraph.hotkeys[my_subnet_uid]
+                        scoring_metrics['block'] = subtensor.block
 
                         if config.save_scoring:
                             dir = f'reddit_block_{subtensor.block}'
                             os.mkdir(dir)
-                            with open(f'{dir}/scoring.csv', 'w') as csvfile:
-                                writer = csv.writer(csvfile)
-                                writer.writerow(['uid'] + dendrites_to_query)
-                                for metric in scoring_metrics:
-                                    writer.writerow([metric] + list(v.item() for v in scoring_metrics[metric]))
+                            with open(f'{dir}/scoring.json', 'w') as output:
+                                json.dump(scoring_metrics, output)
 
-                            ranks = list(torch.argsort(new_scores))
                             for idx, node in enumerate(dendrites_to_query):
-                                rank = ranks.index(idx)
-                                filename = f"{dir}/{search_key}_{rank}_{node}.json"
+                                filename = f"{dir}/{search_key}_{node}.json"
                                 bt.logging.info(f"Writing results to: {filename}")
                                 with open(filename , "w") as write:
                                     json.dump(responses[idx], write)
+
+                        storage.store.store_scoring_metrics(scoring_metrics, 'reddit')
+
 
                 except Exception as e:
                     bt.logging.error(f"❌ Error in redditScore: {e}")
