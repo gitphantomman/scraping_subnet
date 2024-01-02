@@ -276,7 +276,7 @@ def calculateScore(responses = [], tag = 'tao'):
         "normalized_scores": normalized_scores,
     }
 
-    return scoring_metrics
+    return {k: [v.item() for v in tensor] for k, tensor in scoring_metrics.items()}
         
 
 

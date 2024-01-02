@@ -23,6 +23,11 @@ def generate_random_string(length=10):
     return ''.join(random.choice(string.ascii_lowercase) for i in range(length))
 
 
+def store_scoring_metrics(metrics: dict, type: str):
+    block = metrics['block']
+    filename = f"{block:09}_{generate_random_string()}.json"
+    data = json.dumps(metrics)
+    s3.Bucket('scoring').put_object(Key=f"{type}/{filename}", Body=data)
 
 def twitter_store(data = [], search_keys = []):
     id_list = []
