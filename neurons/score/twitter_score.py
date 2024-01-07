@@ -67,14 +67,13 @@ def calculateScore(responses = [], tag = 'tao'):
     # Initialize variables
     # Initialize score list. The length of score list is the same as the length of responses.
     score_list = torch.zeros(len(responses))
-    # Initialize time difference list. The length of time difference list is the same as the length of responses.
-    time_diff_list = torch.zeros(len(responses))
+    # Initialize average age list. The length of average age list is the same as the length of responses.
+    average_age_list = torch.zeros(len(responses))
 
     correct_score = 0
     max_correct_score = 0
-    max_time_diff = 0
-    # Initialize accuracy list. The length of accuracy list is the same as the length of responses.
-    accuracy_list = torch.zeros(len(responses))
+    max_average_age = 0
+
     # Initialize similarity list. The length of similarity list is the same as the length of responses.
     similarity_list = torch.zeros(len(responses))
     max_similar_count = 0
@@ -165,7 +164,7 @@ def calculateScore(responses = [], tag = 'tao'):
         # initialize variables
         similarity_score = 0
         relevant_count = 0
-        time_diff_score = 0
+        age_sum = 0
         total_length += len(response)
         correct_score = 1
         # calculate max_length
@@ -203,38 +202,41 @@ def calculateScore(responses = [], tag = 'tao'):
             similarity_score += (id_counts[item['id']] - 1)
             # calculate time difference score
             date_object = datetime.datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
-            time_diff = datetime.datetime.now() - date_object
-            time_diff_score += time_diff.seconds
+            age = datetime.datetime.now() - date_object
+            age_sum += age.seconds
 
         if max_similar_count < similarity_score:
             max_similar_count = similarity_score
-        if max_time_diff < time_diff_score:
-            max_time_diff = time_diff_score
         if max_correct_score < correct_score:
             max_correct_score = correct_score
 
         similarity_list[i] = similarity_score
-        time_diff_list[i] = time_diff_score
         length_list[i] = len(response)
         correct_list[i] = correct_score
 
         if len(response) > 0:
             relevant_ratio[i] = relevant_count / len(response)
+            average_age = age_sum / len(response)
         else:
             relevant_ratio[i] = 0
+            average_age = 0 # 0 is the "best" age, but miners with no posts will still score 0
+
+        if max_average_age < average_age:
+            max_average_age = average_age
+
+        average_age_list[i] = average_age
 
 
     similarity_list = (similarity_list + 1) / (max_similar_count + 1)
-    time_diff_list = (time_diff_list + 1) / (max_time_diff + 1)
     correct_list = (correct_list + 1) / (max_correct_score + 1)
     length_normalized = (length_list + 1) / (max_length + 1)
 
-    time_diff_contribution = (1 - time_diff_list) * 0.2
+    age_contribution = (1 - (average_age_list + 1) / (max_average_age + 1)) * 0.2
     length_contribution = length_normalized * 0.3
     similarity_contribution = (1 - similarity_list) * 0.3
     relevancy_contribution = relevant_ratio * 0.2
 
-    score_list = (similarity_contribution + time_diff_contribution + length_contribution + relevancy_contribution)
+    score_list = (similarity_contribution + age_contribution + length_contribution + relevancy_contribution)
 
     pre_filtered_score = score_list.clone()
 
@@ -263,8 +265,8 @@ def calculateScore(responses = [], tag = 'tao'):
     scoring_metrics = {
         "correct": correct_list,
         "similarity": similarity_list,
-        "time_diff": time_diff_list,
-        "time_contrib": time_diff_contribution,
+        "average_age": average_age_list,
+        "time_contrib": age_contribution,
         "length": length_list,
         "length_contrib": length_contribution,
         "similarity_contrib": similarity_contribution,
