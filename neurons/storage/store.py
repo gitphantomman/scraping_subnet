@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import os
 import requests
 import json
+import bittensor as bt
 
 load_dotenv()
 wasabi_endpoint_url = os.getenv("WASABI_ENDPOINT_URL")
@@ -22,19 +23,23 @@ s3 = boto3.resource('s3',
 def generate_random_string(length=10):
     return ''.join(random.choice(string.ascii_lowercase) for i in range(length))
 
+def scoring_bucket():
+    return s3.Bucket('scoring')
 
 def store_scoring_metrics(metrics: dict, type: str):
     block = metrics['block']
     filename = f"{block:09}_{generate_random_string()}.json"
     data = json.dumps(metrics)
-    s3.Bucket('scoring').put_object(Key=f"{type}/{filename}", Body=data)
+    key = f"{type}/{filename}"
+    s3.Bucket('scoring').put_object(Key=key, Body=data)
+    bt.logging.info(f"Stored scoring metrics to {key}")
 
 def twitter_store(data = [], search_keys = []):
     id_list = []
     filename = 'twitter_' + generate_random_string() + '.csv'
 
     csv_buffer = StringIO()
-    fieldnames = ['id', 'url', 'text', 'likes', 'images', 'timestamp']
+    fieldnames = ['id', 'url', 'text', 'likes', 'images', 'timestamp', 'username', 'hashtags']
 
     writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
 
@@ -51,6 +56,7 @@ def twitter_store(data = [], search_keys = []):
                         writer.writerow(item)
                         total_count += 1
     if total_count > 0:
+        bt.logging.info(f"Storing results as twitterscrapingbucket/twitter/{filename}")
         s3.Bucket('twitterscrapingbucket').put_object(Key='twitter/' + filename, Body=csv_buffer.getvalue())
 
         csv_buffer.close()
@@ -64,7 +70,7 @@ def reddit_store(data = [], search_keys = []):
     filename = 'reddit_' + generate_random_string() + '.csv'
 
     csv_buffer = StringIO()
-    fieldnames = ['id', 'url', 'text', 'likes', 'dataType', 'timestamp']
+    fieldnames = ['id', 'url', 'text', 'likes', 'dataType', 'timestamp', 'username', 'parent', 'community', 'title', 'num_comments', 'user_id']
 
     writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
     total_count = 0
@@ -82,6 +88,7 @@ def reddit_store(data = [], search_keys = []):
                         total_count += 1
   
     if total_count > 0:
+        bt.logging.info(f"Storing results as redditscrapingbucket/reddit/{filename}")
         s3.Bucket('redditscrapingbucket').put_object(Key='reddit/' + filename, Body=csv_buffer.getvalue())
 
         csv_buffer.close()
