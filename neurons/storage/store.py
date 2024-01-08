@@ -39,7 +39,7 @@ def twitter_store(data = [], search_keys = []):
     filename = 'twitter_' + generate_random_string() + '.csv'
 
     csv_buffer = StringIO()
-    fieldnames = ['id', 'url', 'text', 'likes', 'images', 'timestamp']
+    fieldnames = ['id', 'url', 'text', 'likes', 'images', 'timestamp', 'username', 'hashtags']
 
     writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
 
@@ -56,6 +56,7 @@ def twitter_store(data = [], search_keys = []):
                         writer.writerow(item)
                         total_count += 1
     if total_count > 0:
+        bt.logging.info(f"Storing results as twitterscrapingbucket/twitter/{filename}")
         s3.Bucket('twitterscrapingbucket').put_object(Key='twitter/' + filename, Body=csv_buffer.getvalue())
 
         csv_buffer.close()
@@ -69,7 +70,7 @@ def reddit_store(data = [], search_keys = []):
     filename = 'reddit_' + generate_random_string() + '.csv'
 
     csv_buffer = StringIO()
-    fieldnames = ['id', 'url', 'text', 'likes', 'dataType', 'timestamp']
+    fieldnames = ['id', 'url', 'text', 'likes', 'dataType', 'timestamp', 'username', 'parent', 'community', 'title', 'num_comments', 'user_id']
 
     writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
     total_count = 0
@@ -87,6 +88,7 @@ def reddit_store(data = [], search_keys = []):
                         total_count += 1
   
     if total_count > 0:
+        bt.logging.info(f"Storing results as redditscrapingbucket/reddit/{filename}")
         s3.Bucket('redditscrapingbucket').put_object(Key='reddit/' + filename, Body=csv_buffer.getvalue())
 
         csv_buffer.close()
