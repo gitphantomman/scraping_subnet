@@ -20,7 +20,7 @@ DEALINGS IN THE SOFTWARE.
 # importing necessary libraries and modules
 
 import torch
-import datetime
+from datetime import datetime
 import bittensor as bt
 from neurons.queries import get_query, QueryType, QueryProvider
 import random
@@ -159,8 +159,8 @@ def calculateScore(responses = [], tag = 'tao'):
                 # calculate time difference score
                 date_temp = parse(item['timestamp'])
                 date_string = date_temp.strftime('%Y-%m-%d %H:%M:%S+00:00')
-                date_object = datetime.datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
-                time_diff = datetime.datetime.now() - date_object
+                date_object = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
+                time_diff = datetime.now() - date_object
                 age_sum += time_diff.seconds
         except Exception as e:
             bt.logging.info(f"Bad format: {e}")
@@ -191,10 +191,10 @@ def calculateScore(responses = [], tag = 'tao'):
     similarity_list = (similarity_list + 1) / (max_similar_count + 1)
     correct_list = (correct_list + 1) / (max_correct_score + 1)
     length_normalized = (length_list + 1) / (max_length + 1)
-
-    age_contribution = (1 - (average_age_list + 1) / (max_average_age + 1)) * 0.2
+    
+    age_contribution = (1 - (average_age_list + 1) / (max_average_age + 1)) * 0.4
     length_contribution = length_normalized * 0.3
-    similarity_contribution = (1 - similarity_list) * 0.3
+    similarity_contribution = (1 - similarity_list) * 0.1
     relevancy_contribution = relevant_ratio * 0.2
 
     score_list = (similarity_contribution + age_contribution + length_contribution + relevancy_contribution)
