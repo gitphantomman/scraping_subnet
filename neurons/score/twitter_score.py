@@ -196,7 +196,7 @@ def calculateScore(responses = [], tag = 'tao'):
 
         # calculate scores
         for i_item, item in enumerate(response):
-            if tag.lower() in item['text'].lower():
+            if tag.lower() in item['text'].lower() or tag.lower() in item.get('username', ''):
                 relevant_count += 1
             # calculate similarity score
             similarity_score += (id_counts[item['id']] - 1)
