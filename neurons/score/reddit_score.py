@@ -160,8 +160,8 @@ def calculateScore(responses = [], tag = 'tao'):
                 date_temp = parse(item['timestamp'])
                 date_string = date_temp.strftime('%Y-%m-%d %H:%M:%S+00:00')
                 date_object = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
-                time_diff = datetime.now() - date_object
-                age_sum += time_diff.seconds
+                age = datetime.now() - date_object
+                age_sum += age.total_seconds()
         except Exception as e:
             bt.logging.info(f"Bad format: {e}")
             format_score[i] = 1
