@@ -203,7 +203,7 @@ def calculateScore(responses = [], tag = 'tao'):
             # calculate time difference score
             date_object = datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
             age = datetime.now() - date_object
-            age_sum += age.seconds
+            age_sum += age.total_seconds()
 
         if max_similar_count < similarity_score:
             max_similar_count = similarity_score
