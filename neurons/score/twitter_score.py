@@ -22,6 +22,7 @@ DEALINGS IN THE SOFTWARE.
 import torch
 from datetime import datetime
 import random
+import traceback
 import bittensor as bt
 from urllib.parse import urlparse
 import os
@@ -29,7 +30,7 @@ import re
 import html
 from neurons.queries import get_query, QueryType, QueryProvider
 
-twitter_query = get_query(QueryType.TWITTER, QueryProvider.TWEET_FLASH)
+twitter_query = get_query(QueryType.TWITTER, QueryProvider.MICROWORLDS_TWITTER_SCRAPER)
 
 from itertools import islice
 
@@ -47,7 +48,11 @@ def text_for_comparison(text):
     # And some trim trailing whitespace at the end of newlines, so ignore whitespace.
     text = re.sub(r'\s+', '', text)
     # And some have special characters escaped as html entities
-    return html.unescape(text)
+    text = html.unescape(text)
+    # The validator apify actor uses the tweet.text field and not the note_tweet field (> 280) charts, so only
+    # use the first 255 chars for comparison.
+    text = text[:255]
+    return text
 
 
 
@@ -111,7 +116,8 @@ def calculateScore(responses = [], tag = 'tao'):
                 # Get the last component of the path
                 last_component = os.path.basename(path)
                 if last_component != tweet['id']:
-                    bt.logging.info(f"id/url mismatch detected: {tweet['url']}")
+                    bt.logging.info(f"miner {i} id/url mismatch detected: url={tweet['url']}, id={tweet['id']}")
+                    bt.logging.info(f"marking as invalid: {tweet}")
                     fake_score[i] = 1
 
                 tweet_id = tweet['id']
@@ -144,12 +150,13 @@ def calculateScore(responses = [], tag = 'tao'):
             found_urls = set()
             tries = 0
             remaining_urls = set(spot_check_urls)
-            while tries < 5 and len(remaining_urls) > 3:
+            while tries < 2 and len(remaining_urls) > 0:
                 urls = random.sample(remaining_urls, k=min(20, len(remaining_urls)))
-                bt.logging.info(f"Validating {len(urls)}/{len(remaining_urls)} tweets.")
-                batch_tweets = twitter_query.searchByUrl(urls)
+                bt.logging.info(f"Fetching {len(urls)} tweets out of {len(remaining_urls)} remaining to validate.")
+                max_tweets_per_url = 1 if tries == 0 else 10 
+                batch_tweets = twitter_query.searchByUrl(urls, max_tweets_per_url)
                 batch_urls = set([tweet['url'] for tweet in batch_tweets])
-                bt.logging.info(f"Fetched {len(batch_urls)}/{len(urls)} tweets.")
+                bt.logging.info(f"Fetched {len(batch_urls)}.")
                 remaining_urls = remaining_urls - set(batch_urls)
                 spot_check_tweets += batch_tweets
                 tries += 1
@@ -157,6 +164,7 @@ def calculateScore(responses = [], tag = 'tao'):
             missing_urls = set(spot_check_urls) - set(found_urls)
             bt.logging.info(f"Missing {len(missing_urls)}/{len(spot_check_urls)} tweets.")
         except Exception as e:
+            print(traceback.format_exc())
             bt.logging.error(f"❌ Error while verifying post: {e}")
 
     # Calculate score for each response
@@ -166,7 +174,6 @@ def calculateScore(responses = [], tag = 'tao'):
         relevant_count = 0
         age_sum = 0
         total_length += len(response)
-        correct_score = 1
         # calculate max_length
         if len(response) > max_length:
             max_length = len(response)
@@ -181,12 +188,7 @@ def calculateScore(responses = [], tag = 'tao'):
                 miner_text = text_for_comparison(sample_item['text'])
                 verify_text = text_for_comparison(searched_item['text'])
 
-                # Some sources truncate time to the nearest minute.
-                # timestamp format is '2011-04-25 16:55:15+00:00', so drop the last
-                miner_timestamp = sample_item['timestamp'][:16]
-                verify_timestamp = searched_item['timestamp'][:16]
-
-                if(verify_text == miner_text and verify_timestamp == miner_timestamp):
+                if(verify_text == miner_text and searched_item['timestamp'] == sample_item['timestamp']):
                     correct_score = 1
                 else:
                     bt.logging.info(f"Tampered tweet! (idx = {i}) {sample_item}")
@@ -195,15 +197,20 @@ def calculateScore(responses = [], tag = 'tao'):
                 bt.logging.info(f"No result returned for {sample_item} (miner_idx={i})")
 
         # calculate scores
-        for i_item, item in enumerate(response):
+        for item in response:
             if tag.lower() in item['text'].lower() or tag.lower() in item.get('username', ''):
                 relevant_count += 1
             # calculate similarity score
             similarity_score += (id_counts[item['id']] - 1)
             # calculate time difference score
-            date_object = datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
-            age = datetime.now() - date_object
-            age_sum += age.total_seconds()
+            try:
+                date_object = datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
+                age = datetime.utcnow() - date_object
+                age_sum += age.total_seconds()
+            except Exception as e:
+                # Mark as fake data if date format incorrect
+                fake_score[i] = 1
+                bt.logging.info(f"Tweet had bad date format: {e}")
 
         if max_similar_count < similarity_score:
             max_similar_count = similarity_score

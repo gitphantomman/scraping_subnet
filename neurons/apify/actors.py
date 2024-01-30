@@ -19,7 +19,7 @@ DEALINGS IN THE SOFTWARE.
 
 import os
 import logging
-from apify_client import ApifyClient
+from apify_client import ApifyClient, ApifyClientAsync
 
 # Set up logger for the script
 logger = logging.getLogger(__name__)
@@ -72,3 +72,33 @@ def run_actor(actor_config: ActorConfig, run_input: dict, default_dataset_id: st
 
     logger.info(f"Fetched {len(data_set)} items from dataset")
     return data_set
+
+async def run_actor_async(actor_config: ActorConfig, run_input: dict, default_dataset_id: str = "defaultDatasetId"):
+    """
+    Run an actor in Apify and fetch the resulting data.
+
+    Args:
+        actor_config (ActorConfig): The configuration to use for running the actor.
+        run_input (dict): The input parameters for the actor run.
+        default_dataset_id (str, optional): ID of the dataset to fetch data from. Defaults to "defaultDatasetId".
+
+    Returns:
+        list[dict]: List of items fetched from the dataset.
+    """
+    # Initialize the Apify client with the API key
+    client = ApifyClientAsync(actor_config.api_key)
+    logger.info(f"Running actor: {actor_config.actor_id}")
+    run = await client.actor(actor_config.actor_id).call(run_input=run_input, timeout_secs=actor_config.timeout_secs, memory_mbytes=actor_config.memory_mbytes)  # Start the actor run
+    logger.info(f"Actor run: {run}")
+
+    # Fetch data items from the specified dataset
+    dataset = client.dataset(run[default_dataset_id])
+    items = dataset.iterate_items()
+
+    fetched_items = []
+
+    async for item in items:
+        fetched_items.append(item)
+
+    logger.info(f"Fetched {len(fetched_items)} items from dataset")
+    return fetched_items
