@@ -57,6 +57,7 @@ class MicroworldsTwitterScraper:
         run_input = {
             "maxRequestRetries": 3,
             "searchMode": "live",
+            "scrapeTweetReplies": True,
             "searchTerms": search_queries,
             "maxTweets": limit_number
         }
@@ -89,7 +90,7 @@ class MicroworldsTwitterScraper:
         return {
             'id': item['id_str'], 
             'url': item['url'], 
-            'text': item['full_text'], 
+            'text': item.get('truncated_full_text') or item['full_text'], 
             'likes': item['favorite_count'], 
             'images': images, 
             'username': item['user']['screen_name'],
@@ -122,7 +123,7 @@ if __name__ == '__main__':
     print(f"Fetched {len(urls)} urls: {urls}")
 
     data_set = query.searchByUrl(urls=urls)
-    
+
     verified_urls = [tweet['url'] for tweet in data_set]
 
     print(f"Verification returned {len(verified_urls)} tweets")
@@ -139,6 +140,8 @@ if __name__ == '__main__':
         unverified = set(urls) - set(verified_urls) - set(verified_urls2)
 
         print(f"Num unverified: {len(unverified)}: {unverified}")
+    else:
+        print("All verified!")
 
     # Output the tweet data
     #for item in data_set:
