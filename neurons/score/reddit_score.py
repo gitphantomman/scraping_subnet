@@ -28,6 +28,9 @@ from dateutil.parser import parse
 
 reddit_query = get_query(QueryType.REDDIT, QueryProvider.PERCIPIO_REDDIT_LOOKUP)
 
+def parse_date(dateStr: str):
+    return datetime.strptime(dateStr, '%Y-%m-%d %H:%M:%S+00:00')
+
 def calculateScore(responses = [], tag = 'tao'):
     """
     This function calculates the score of responses.
@@ -76,6 +79,13 @@ def calculateScore(responses = [], tag = 'tao'):
             try:
                 # Check that 'text', 'timestamp' and 'dataType' fields exist
                 post['text'] and post['timestamp'] and post['dataType']
+
+                date_object = datetime.fromisoformat(post['timestamp'].rstrip('Z'))
+                age = datetime.utcnow() - date_object
+                if age.seconds < 0:
+                    bt.logging.warning(f"Faked future post: {post}")
+                    fake_score[i] = 1
+
                 if post['id'] in id_list:
                     bt.logging.info(f"Duplicated id found: {post['id']} in response {i}")
                     fake_score[i] = 1
@@ -157,10 +167,8 @@ def calculateScore(responses = [], tag = 'tao'):
                 # calculate similarity score
                 similarity_score += (id_counts[item['id']] - 1)
                 # calculate time difference score
-                date_temp = parse(item['timestamp'])
-                date_string = date_temp.strftime('%Y-%m-%d %H:%M:%S+00:00')
-                date_object = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S+00:00')
-                age = datetime.now() - date_object
+                date_object = datetime.fromisoformat(item['timestamp'].rstrip('Z'))
+                age = datetime.utcnow() - date_object
                 age_sum += age.total_seconds()
         except Exception as e:
             bt.logging.info(f"Bad format: {e}")
