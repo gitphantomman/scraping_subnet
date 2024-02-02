@@ -54,7 +54,8 @@ def text_for_comparison(text):
     text = text[:255]
     return text
 
-
+def parse_date(dateStr: str):
+    return datetime.strptime(dateStr, '%Y-%m-%d %H:%M:%S+00:00')
 
 def calculateScore(responses = [], tag = 'tao'):
     """
@@ -103,8 +104,15 @@ def calculateScore(responses = [], tag = 'tao'):
         id_list = []
         for tweet in response:
             try:
-                # Check that 'text' and 'timestamp' fields exist
-                tweet['text'] and tweet['timestamp']
+                # A single tweet in the response in the far future can usually skip validation, but
+                # will effect average age significantly and boost score. A future tweet will invalidate
+                # this response.
+                date_object = parse_date(tweet['timestamp'])
+                age = datetime.utcnow() - date_object
+                if age.seconds < 0:
+                    bt.logging.warning(f"Faked future tweet: {tweet}")
+                    fake_score[i] = 1
+
                 if tweet['id'] in id_list or tweet['id'] not in tweet['url']:
                     fake_score[i] = 1
                 else:
@@ -116,8 +124,7 @@ def calculateScore(responses = [], tag = 'tao'):
                 # Get the last component of the path
                 last_component = os.path.basename(path)
                 if last_component != tweet['id']:
-                    bt.logging.info(f"miner {i} id/url mismatch detected: url={tweet['url']}, id={tweet['id']}")
-                    bt.logging.info(f"marking as invalid: {tweet}")
+                    bt.logging.warning(f"miner {i} id/url mismatch detected: url={tweet['url']}, id={tweet['id']}")
                     fake_score[i] = 1
 
                 tweet_id = tweet['id']
@@ -126,7 +133,7 @@ def calculateScore(responses = [], tag = 'tao'):
                 else:
                     id_counts[tweet_id] = 1
             except Exception as e:
-                bt.logging.error(f"❌ Bad format for post: {e}, {tweet}")
+                bt.logging.warning(f"❌ Bad format for post: {e}, {tweet}")
                 format_score[i] = 1
 
     # Choose random responses from each miner to compare, and gather their urls
@@ -204,7 +211,7 @@ def calculateScore(responses = [], tag = 'tao'):
             similarity_score += (id_counts[item['id']] - 1)
             # calculate time difference score
             try:
-                date_object = datetime.strptime(item['timestamp'], '%Y-%m-%d %H:%M:%S+00:00')
+                date_object = parse_date(item['timestamp'])
                 age = datetime.utcnow() - date_object
                 age_sum += age.total_seconds()
             except Exception as e:
