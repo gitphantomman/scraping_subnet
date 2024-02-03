@@ -28,9 +28,6 @@ from dateutil.parser import parse
 
 reddit_query = get_query(QueryType.REDDIT, QueryProvider.PERCIPIO_REDDIT_LOOKUP)
 
-def parse_date(dateStr: str):
-    return datetime.strptime(dateStr, '%Y-%m-%d %H:%M:%S+00:00')
-
 def calculateScore(responses = [], tag = 'tao'):
     """
     This function calculates the score of responses.
@@ -82,7 +79,7 @@ def calculateScore(responses = [], tag = 'tao'):
 
                 date_object = datetime.fromisoformat(post['timestamp'].rstrip('Z'))
                 age = datetime.utcnow() - date_object
-                if age.seconds < 0:
+                if age.total_seconds() < 0:
                     bt.logging.warning(f"Faked future post: {post}")
                     fake_score[i] = 1
 

@@ -109,7 +109,7 @@ def calculateScore(responses = [], tag = 'tao'):
                 # this response.
                 date_object = parse_date(tweet['timestamp'])
                 age = datetime.utcnow() - date_object
-                if age.seconds < 0:
+                if age.total_seconds():
                     bt.logging.warning(f"Faked future tweet: {tweet}")
                     fake_score[i] = 1
 
