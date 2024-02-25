@@ -39,6 +39,7 @@ def twitter_store(data = [], search_keys = []):
     filename = 'twitter_' + generate_random_string() + '.csv'
 
     csv_buffer = StringIO()
+    required_fields = ['id', 'url', 'text', 'likes', 'images', 'timestamp']
     fieldnames = ['id', 'url', 'text', 'likes', 'images', 'timestamp', 'username', 'hashtags']
 
     writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
@@ -48,15 +49,22 @@ def twitter_store(data = [], search_keys = []):
     for response in data:
         if response != [] and response != None:
             for item in response:
+
+                # Check if all required keys are present in the dictionary
+                if not all(key in item and item[key] is not None for key in required_fields):
+                    continue
+
                 if item['id'] in id_list or item['id'] == None:
                     continue
                 else:
                     id_list.append(item['id'])
-                    if item.get('id') != None and item.get('url') != None and item.get('text') != None and item.get('likes') != None and item.get('images') != None and item.get('timestamp') != None:
-                        writer.writerow(item)
-                        total_count += 1
+                    # Remove any non-standard keys
+                    item = {key: value for key, value in item.items() if key in fieldnames}
+                    writer.writerow(item)
+                    total_count += 1
+
     if total_count > 0:
-        bt.logging.info(f"Storing results as twitterscrapingbucket/twitter/{filename}")
+        bt.logging.info(f"Storing {total_count} results as twitterscrapingbucket/twitter/{filename}")
         s3.Bucket('twitterscrapingbucket').put_object(Key='twitter/' + filename, Body=csv_buffer.getvalue())
 
         csv_buffer.close()
@@ -70,6 +78,7 @@ def reddit_store(data = [], search_keys = []):
     filename = 'reddit_' + generate_random_string() + '.csv'
 
     csv_buffer = StringIO()
+    required_fields = ['id', 'url', 'text', 'likes', 'dataType', 'timestamp']
     fieldnames = ['id', 'url', 'text', 'likes', 'dataType', 'timestamp', 'username', 'parent', 'community', 'title', 'num_comments', 'user_id']
 
     writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
@@ -78,17 +87,23 @@ def reddit_store(data = [], search_keys = []):
     for response in data:
         if response != [] and response != None:
             for item in response:
+
+                # Check if all required keys are present in the dictionary
+                if not all(key in item and item[key] is not None for key in required_fields):
+                    continue
  
+                # Avoid duplicates
                 if item['id'] in id_list or item['id'] == None:
                     continue
                 else:
                     id_list.append(item['id'])
-                    if item.get('id') != None and item.get('url') != None and item.get('text') != None and item.get('likes') != None and item.get('dataType') != None and item.get('timestamp') != None:
-                        writer.writerow(item)
-                        total_count += 1
+                    # Remove any non-standard keys
+                    item = {key: value for key, value in item.items() if key in fieldnames}
+                    writer.writerow(item)
+                    total_count += 1
   
     if total_count > 0:
-        bt.logging.info(f"Storing results as redditscrapingbucket/reddit/{filename}")
+        bt.logging.info(f"Storing {total_count} results as redditscrapingbucket/reddit/{filename}")
         s3.Bucket('redditscrapingbucket').put_object(Key='reddit/' + filename, Body=csv_buffer.getvalue())
 
         csv_buffer.close()
