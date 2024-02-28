@@ -19,7 +19,7 @@ DEALINGS IN THE SOFTWARE.
 
 # Define the version of the scraping module.
 
-__version__ = "2.2.14"
+__version__ = "2.2.15"
 version_split = __version__.split(".")
 __spec_version__ = (1000 * int(version_split[0])) + (10 * int(version_split[1])) + (1 * int(version_split[2]))
 
