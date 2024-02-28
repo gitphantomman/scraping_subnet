@@ -158,7 +158,7 @@ def calculateScore(responses = [], tag = 'tao'):
             tries = 0
             remaining_urls = set(spot_check_urls)
             while tries < 2 and len(remaining_urls) > 0:
-                urls = random.sample(remaining_urls, k=min(20, len(remaining_urls)))
+                urls = random.sample(sorted(remaining_urls), k=min(20, len(remaining_urls)))
                 bt.logging.info(f"Fetching {len(urls)} tweets out of {len(remaining_urls)} remaining to validate.")
                 max_tweets_per_url = 1 if tries == 0 else 10 
                 batch_tweets = twitter_query.searchByUrl(urls, max_tweets_per_url)
