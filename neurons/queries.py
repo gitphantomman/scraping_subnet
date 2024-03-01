@@ -5,6 +5,7 @@ from neurons.apify.tweeter.tweet_flash_query import TweetFlashQuery
 from neurons.apify.tweeter.tweet_scraper_query import TweetScraperQuery
 from neurons.apify.tweeter.web_harvester_twitter_scraper_query import WebHarvesterTwitterScraperQuery
 from neurons.apify.tweeter.microworlds_twitter_scraper import MicroworldsTwitterScraper
+from neurons.apify.tweeter.apidojo_tweet_scraper import ApiDojoTweetScraper
 from neurons.apify.reddit.reddit_scraper_lite import RedditScraperLite
 from neurons.apify.reddit.reddit_scraper import RedditScraper
 from neurons.apify.reddit.epctex_reddit_scraper import EpctexRedditScraper
@@ -33,6 +34,7 @@ class QueryProvider(Enum):
     EPCTEX_REDDIT_SCRAPER = "epctex_reddit_scraper"
     PERCIPIO_REDDIT_LOOKUP = "percipio_reddit_lookup"
     MICROWORLDS_TWITTER_SCRAPER = "microworlds_twitter_scraper"
+    APIDOJO_TWEET_SCRAPER = "apidojo_tweet_scraper"
 
 
 # Mapping between query types and their respective classes
@@ -41,6 +43,7 @@ QUERY_MAP = {
     (QueryType.TWITTER, QueryProvider.TWEET_FLASH): TweetFlashQuery,
     (QueryType.TWITTER, QueryProvider.WEB_HARVESTER_TWITTER_SCRAPER): WebHarvesterTwitterScraperQuery,    
     (QueryType.TWITTER, QueryProvider.MICROWORLDS_TWITTER_SCRAPER): MicroworldsTwitterScraper,    
+    (QueryType.TWITTER, QueryProvider.APIDOJO_TWEET_SCRAPER): ApiDojoTweetScraper,    
     (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER_LITE): RedditScraperLite,
     (QueryType.REDDIT, QueryProvider.REDDIT_SCRAPER): RedditScraper,
     (QueryType.REDDIT, QueryProvider.EPCTEX_REDDIT_SCRAPER): EpctexRedditScraper,
