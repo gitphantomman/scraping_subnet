@@ -40,7 +40,6 @@ def get_config():
     parser = argparse.ArgumentParser()
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 3, help = "The chain subnet uid." )
-    parser.add_argument( '--neuron.not_set_weights', type=bool, default = True, help = "miners can set weights.")
     parser.add_argument( '--auto-update', type = str, default = True, help = "Set to \"no\" to disable auto update.")
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
@@ -295,32 +294,6 @@ def main( config ):
     step = 0
     while True:          
         try:
-            if subtensor.block - last_updated_block >= 100 and config.neuron.not_set_weights is False:
-                bt.logging.trace(f"Setting miner weight")
-                # find the uid that matches config.wallet.hotkey [meta.axons[N].hotkey == config.wallet.hotkey]
-                # set the weight of that uid to 1.0
-                uid = None
-                try:
-                    for _uid, axon in enumerate(metagraph.axons):
-                        if axon.hotkey == wallet.hotkey.ss58_address:
-                            # uid = axon.uid
-                            # uid doesnt exist ona xon
-                            uid = _uid
-                            break
-                    if uid is not None:
-                        # 0 weights for all uids
-                        weights = torch.Tensor([0.0] * len(metagraph.uids))
-                        # 1 weight for uid
-                        weights[uid] = 1.0
-                        (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
-                        subtensor.set_weights(wallet = wallet, netuid = config.netuid, weights = processed_weights, uids = uids)
-                        last_updated_block = subtensor.block
-                        bt.logging.trace("Miner weight set!")
-                    else:
-                        bt.logging.warning(f"Could not find uid with hotkey {config.wallet.hotkey} to set weight")
-                except Exception as e:
-                    bt.logging.warning(f"Could not set miner weight: {e}")
-                    raise e
             # Below: Periodically update our knowledge of the network graph.
             if step % 60 == 0:
                 try:
