@@ -30,29 +30,8 @@ import re
 import html
 from neurons.queries import get_query, QueryType, QueryProvider
 
-twitter_query = get_query(QueryType.TWITTER, QueryProvider.MICROWORLDS_TWITTER_SCRAPER)
+twitter_query = get_query(QueryType.TWITTER, QueryProvider.APIDOJO_TWEET_SCRAPER)
 
-from itertools import islice
-
-def chunk(it, size):
-    it = iter(it)
-    return iter(lambda: tuple(islice(it, size)), ())
-
-
-# Removes links, leading mentions, whitespace, and convert html entities
-def text_for_comparison(text):
-    # url shorteners can cause problems with tweet verification, so remove urls from the text comparison.
-    text = re.sub(r'(https?://)?\S+\.\S+\/?(\S+)?', '', text)
-    # Some scrapers put the mentions at the front of the text, remove them.
-    text = re.sub(r'^(@\w+\s*)+', '', text)
-    # And some trim trailing whitespace at the end of newlines, so ignore whitespace.
-    text = re.sub(r'\s+', '', text)
-    # And some have special characters escaped as html entities
-    text = html.unescape(text)
-    # The validator apify actor uses the tweet.text field and not the note_tweet field (> 280) charts, so only
-    # use the first 255 chars for comparison.
-    text = text[:255]
-    return text
 
 def parse_date(dateStr: str):
     return datetime.strptime(dateStr, '%Y-%m-%d %H:%M:%S+00:00')
@@ -158,10 +137,9 @@ def calculateScore(responses = [], tag = 'tao'):
             tries = 0
             remaining_urls = set(spot_check_urls)
             while tries < 2 and len(remaining_urls) > 0:
-                urls = random.sample(remaining_urls, k=min(20, len(remaining_urls)))
+                urls = random.sample(sorted(remaining_urls), k=min(20, len(remaining_urls)))
                 bt.logging.info(f"Fetching {len(urls)} tweets out of {len(remaining_urls)} remaining to validate.")
-                max_tweets_per_url = 1 if tries == 0 else 10 
-                batch_tweets = twitter_query.searchByUrl(urls, max_tweets_per_url)
+                batch_tweets = twitter_query.searchByUrl(urls)
                 batch_urls = set([tweet['url'] for tweet in batch_tweets])
                 bt.logging.info(f"Fetched {len(batch_urls)}.")
                 remaining_urls = remaining_urls - set(batch_urls)
@@ -192,8 +170,8 @@ def calculateScore(responses = [], tag = 'tao'):
             searched_item = next((tweet for tweet in spot_check_tweets if tweet['id'] == sample_item['id']), None)
             if searched_item:
                 # Normalize text to account for variations in scraped data.
-                miner_text = text_for_comparison(sample_item['text'])
-                verify_text = text_for_comparison(searched_item['text'])
+                miner_text = sample_item['text']
+                verify_text = searched_item['text']
 
                 if(verify_text == miner_text and searched_item['timestamp'] == sample_item['timestamp']):
                     correct_score = 1

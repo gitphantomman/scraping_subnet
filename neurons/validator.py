@@ -230,7 +230,7 @@ def main( config ):
             # Broadcast a GET_DATA query to filtered miners on the network.
 
             # * every 10 minutes, query the miners for twitter data
-            if step % 4 == 2:
+            if step % 4 == 0:
                 search_key = random_line()
                 bt.logging.info(f"\033[92m 𝕏 ⏩ Sending tweeter query ({search_key}). \033[0m")
                 responses = dendrite.query(
@@ -258,7 +258,7 @@ def main( config ):
                         scoring_metrics['block'] = subtensor.block
 
                         if config.save_scoring:
-                            dir = f'twitter_block_{subtensor.block}'
+                            dir = f'/opt/data/sn3/twitter_block_{subtensor.block}'
                             os.mkdir(dir)
                             with open(f'{dir}/scoring.json', 'w') as output:
                                 json.dump(scoring_metrics, output)
@@ -317,7 +317,7 @@ def main( config ):
                     else: bt.logging.error('Failed to set weights.')
 
             # Periodically update the weights on the Bittensor blockchain.
-            if step % 4 == 0:
+            if step % 4 == 2:
                 bt.logging.info(f"\033[92m ᕕ ⏩ Sending reddit query. \033[0m")
                 search_key = random_line()
                 responses = dendrite.query(
@@ -345,7 +345,7 @@ def main( config ):
                         scoring_metrics['block'] = subtensor.block
 
                         if config.save_scoring:
-                            dir = f'reddit_block_{subtensor.block}'
+                            dir = f'/opt/data/sn3/reddit_block_{subtensor.block}'
                             os.mkdir(dir)
                             with open(f'{dir}/scoring.json', 'w') as output:
                                 json.dump(scoring_metrics, output)
