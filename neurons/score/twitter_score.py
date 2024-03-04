@@ -111,8 +111,13 @@ def calculateScore(responses = [], tag = 'tao'):
                     id_counts[tweet_id] += 1
                 else:
                     id_counts[tweet_id] = 1
+
+                if not tweet.get('username'):
+                    format_score[i] = 1
+                    bt.logging.warning(f"❌ Tweet missing username: {e}, {tweet}")
+
             except Exception as e:
-                bt.logging.warning(f"❌ Bad format for post: {e}, {tweet}")
+                bt.logging.warning(f"❌ Bad format for tweet: {e}, {tweet}")
                 format_score[i] = 1
 
     # Choose random responses from each miner to compare, and gather their urls
@@ -150,7 +155,7 @@ def calculateScore(responses = [], tag = 'tao'):
             bt.logging.info(f"Missing {len(missing_urls)}/{len(spot_check_urls)} tweets.")
         except Exception as e:
             print(traceback.format_exc())
-            bt.logging.error(f"❌ Error while verifying post: {e}")
+            bt.logging.error(f"❌ Error while verifying tweet: {e}")
 
     # Calculate score for each response
     for i, response in enumerate(responses):
@@ -173,11 +178,17 @@ def calculateScore(responses = [], tag = 'tao'):
                 miner_text = sample_item['text']
                 verify_text = searched_item['text']
 
-                if(verify_text == miner_text and searched_item['timestamp'] == sample_item['timestamp']):
-                    correct_score = 1
-                else:
-                    bt.logging.info(f"Tampered tweet! (idx = {i}) {sample_item}")
+                if verify_text != miner_text:
+                    bt.logging.info(f"Text does not match! (miner_idx = {i}) {sample_item}")
                     bt.logging.info(f"Original tweet: {searched_item}")
+                elif searched_item['timestamp'] != sample_item['timestamp']:
+                    bt.logging.info(f"Timestamp does not match! (miner_idx = {i}) {sample_item}")
+                    bt.logging.info(f"Original tweet: {searched_item}")
+                elif searched_item['username'] != sample_item['username']:
+                    bt.logging.info(f"Username does not match! (miner_idx = {i}) {sample_item}")
+                    bt.logging.info(f"Original tweet: {searched_item}")
+                else:
+                    correct_score = 1
             else: 
                 bt.logging.info(f"No result returned for {sample_item} (miner_idx={i})")
 
@@ -211,7 +222,7 @@ def calculateScore(responses = [], tag = 'tao'):
             average_age = age_sum / len(response)
         else:
             relevant_ratio[i] = 0
-            average_age = 0 # 0 is the "best" age, but miners with no posts will still score 0
+            average_age = 0 # 0 is the "best" age, but miners with no tweets will still score 0
 
         if max_average_age < average_age:
             max_average_age = average_age
