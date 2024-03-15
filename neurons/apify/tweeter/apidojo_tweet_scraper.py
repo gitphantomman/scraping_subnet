@@ -2,6 +2,7 @@ import logging
 from neurons.apify.actors import run_actor, run_actor_async, ActorConfig
 from datetime import datetime, timezone
 import asyncio
+import bittensor as bt
 
 # Setting up logger for debugging and information purposes
 logger = logging.getLogger(__name__)
@@ -49,33 +50,37 @@ class ApiDojoTweetScraper:
         return date.isoformat(sep=' ', timespec='seconds')
 
     def map_item(self, item) -> dict:
-        hashtags = ["#" + x["text"] for x in item.get("entities", {}).get('hashtags', [])]
+        try:
+            hashtags = ["#" + x["text"] for x in item.get("entities", {}).get('hashtags', [])]
 
-        images = []
+            images = []
 
-        extended_entities = item.get("extendedEntities")
-        if extended_entities:
-            media_urls = {m["media_key"]: m["media_url_https"] for m in extended_entities["media"] if m.get("media_url_https")}
+            extended_entities = item.get("extendedEntities")
+            if extended_entities:
+                media_urls = {m["media_key"]: m["media_url_https"] for m in extended_entities["media"] if m.get("media_url_https")}
 
-        for media in item.get("entities", {}).get('media', []):
-            media_key = media.get("media_key")
-            if media_key:
-                images.append(media_urls[media_key])
+            for media in item.get("entities", {}).get('media', []):
+                media_key = media.get("media_key")
+                if media_key:
+                    images.append(media_urls[media_key])
 
 
-        date_format = "%a %b %d %H:%M:%S %z %Y"
-        parsed_date = datetime.strptime(item["createdAt"], date_format)
+            date_format = "%a %b %d %H:%M:%S %z %Y"
+            parsed_date = datetime.strptime(item["createdAt"], date_format)
 
-        return {
-            'id': item['id'], 
-            'url': item['twitterUrl'], 
-            'text': item.get('text'), 
-            'likes': item['likeCount'], 
-            'images': images, 
-            'username': item['author']['userName'],
-            'hashtags': hashtags,
-            'timestamp': self.format_date(parsed_date)
-        } 
+            return {
+                'id': item['id'], 
+                'url': item['twitterUrl'], 
+                'text': item.get('text'), 
+                'likes': item['likeCount'], 
+                'images': images, 
+                'username': item['author']['userName'],
+                'hashtags': hashtags,
+                'timestamp': self.format_date(parsed_date)
+            } 
+        except Exception as e:
+            bt.logging.error(f"❌ Error while converting tweet to sn3 model: {e}, tweet = {item}")
+
 
     def map(self, input: list) -> list:
         """
@@ -87,7 +92,12 @@ class ApiDojoTweetScraper:
         Returns:
             list: The mapped or transformed data.
         """
-        filtered_input = [self.map_item(item) for item in input]
+        filtered_input = []
+        for item in input:
+            sn3_item = self.map_item(item)
+            if sn3_item:
+                filtered_input.append(sn3_item)
+
         return filtered_input
 
 
